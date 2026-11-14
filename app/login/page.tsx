@@ -1,0 +1,6 @@
+'use client';
+import {useState} from 'react';
+import {createClient} from '../../lib/supabase';
+export default function Login(){const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+async function signIn(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage('');try{const supabase=createClient();const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;location.href='/dashboard'}catch(err){setMessage(err instanceof Error?err.message:'Sign in failed')}finally{setBusy(false)}}
+return <main className="login-wrap"><section className="login-card"><img src="/vega-logo.png" alt="VEGA" className="login-logo"/><h1>Welcome back</h1><p>Sign in to VEGA Exhibition CRM/ERP</p><form onSubmit={signIn}><label>Email address</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="name@company.com"/><label>Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} required placeholder="Your password"/><button disabled={busy}>{busy?'Signing in…':'Sign in'}</button></form>{message&&<div className="error">{message}</div>}<small>Account access is managed through Supabase Auth.</small></section></main>}
