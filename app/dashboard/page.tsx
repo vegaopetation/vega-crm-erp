@@ -74,7 +74,7 @@ const definitions:any={
 "Webhook Management & Data Warehouse":{desc:"Webhook subscriptions, warehouse data exports, event delivery history and analytics data pipelines.",fields:["Webhook / Pipeline", "Event source", "Destination", "Delivery cadence", "Last delivery", "Failures", "Status"],rows:[]},
 "Custom Data Mapping & Integration Logs":{desc:"Field mapping configuration, transformation rules and searchable integration diagnostics.",fields:["Source system", "Object", "Source field", "VEGA field", "Transform", "Last result", "Status"],rows:[]},
 "Migration & Scheduled Synchronization":{desc:"Migration plans, validation results, recurring sync jobs and import monitoring.",fields:["Job", "Source", "Data scope", "Schedule", "Last run", "Records processed", "Status"],rows:[]},
-
+};
 const starterRows:any={};
 export default function Dashboard(){const [email,setEmail]=useState('VEGA Workspace');const [moduleName,setModuleName]=useState('Dashboard');const [search,setSearch]=useState('');const [ready,setReady]=useState(false);const [records,setRecords]=useState<any>({});const [showForm,setShowForm]=useState(false);const [form,setForm]=useState<any>({});const [notice,setNotice]=useState('');const [lang,setLang]=useState('EN');const [mobileNav,setMobileNav]=useState(false);
 useEffect(()=>{try{const s=createClient();s.auth.getUser().then(({data,error})=>{if(error||!data.user){setEmail('Supabase not connected');}else setEmail(data.user.email||'VEGA user')});}catch{setEmail('Cloud setup pending')}setReady(true);},[]);
