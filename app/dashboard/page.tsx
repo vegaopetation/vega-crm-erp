@@ -36,7 +36,7 @@ const definitions:any={
     ['Cloud database', 'Supabase PostgreSQL', 'Requires project connection'],
     ['Authentication', 'Supabase Auth + MFA', 'Configured in cloud'],
     ['Backups', 'Scheduled database backups', 'Configure plan'],
-    ['REST API','Supabase generated API','Available after schema deploy']]},
+    ['REST API', 'Supabase generated API', 'Available after schema deploy']
   ]
 },
 
