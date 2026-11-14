@@ -29,9 +29,22 @@ const definitions:any={
 'Communication Center':{desc:'WhatsApp Business Cloud API, AI email manager, bulk campaigns, quotation follow-ups, invoice delivery and workflow automation.',fields:['Campaign / Workflow','Channel','Audience','Scheduled','Status'],rows:[['Invoice Payment Reminder','WhatsApp + Email','Overdue accounts','Daily','Enabled']]},
 'AI Assistant':{desc:'AI sales assistant, revenue forecasting, document reader, email writing, exhibition insights, report generation and customer recommendations.',fields:['AI capability','Description','Status'],rows:[['Lead scoring','Prioritize prospects using lead attributes and engagement','Ready for integration'],['Revenue forecasting','Forecast exhibition revenue and cash flow','Ready for integration'],['Document reader','Extract fields from licenses, passports and visas','Ready for integration']]},
 'Notifications':{desc:'Unified notification center for tasks, approvals, reservation expiry, payment due dates and document expiry.',fields:['Notification','Module','Due','Priority','Status'],rows:[]},
-'Security & Settings':{desc:'Live multi-user sync, backups and restore, audit trail, 2FA, device history, approval workflows, cloud file storage, import/export, REST API and global search.',fields:['Setting','Value','Status'],rows:[['Cloud database','Supabase PostgreSQL','Requires project connection'],['Authentication','Supabase Auth + MFA','Configured in cloud'],['Backups','Scheduled database backups','Configure plan'],['REST API','Supabase generated API','Available after schema deploy']]}}
-"Exhibition Portfolio Management":{desc:"Portfolio view for managing event portfolio, brands, franchise licenses, ownership and multi-country operations.",fields:["Portfolio", "Exhibition", "Brand", "Country", "Owner", "Branch", "License status", "Status"],rows:[]},
-"Brand & Franchise Management":{desc:"Manage exhibition brands, franchise partners, licensing terms, territories and renewals.",fields:["Brand", "Franchise partner", "Territory", "License start", "License end", "Royalty terms", "Status"],rows:[]},
+'Security & Settings': {
+  desc: 'Live multi-user sync, backups and restore, audit trail, 2FA, device history, approval workflows, cloud file storage, import/export, REST API and global search.',
+  fields: ['Setting', 'Value', 'Status'],
+  rows: [
+    ['Cloud database', 'Supabase PostgreSQL', 'Requires project connection'],
+    ['Authentication', 'Supabase Auth + MFA', 'Configured in cloud'],
+    ['Backups', 'Scheduled database backups', 'Configure plan'],
+    ['REST API','Supabase generated API','Available after schema deploy']]},
+  ]
+},
+
+'Exhibition Portfolio Management': {
+  desc: 'Portfolio view for managing event portfolio, brands, franchise licenses, ownership and multi-country operations.',
+  fields: ['Portfolio', 'Exhibition', 'Brand', 'Country', 'Owner', 'Branch', 'License status', 'Status'],
+  rows: []
+},"Brand & Franchise Management":{desc:"Manage exhibition brands, franchise partners, licensing terms, territories and renewals.",fields:["Brand", "Franchise partner", "Territory", "License start", "License end", "Royalty terms", "Status"],rows:[]},
 "International & Branch Management":{desc:"Country offices, branch profiles, international exhibitions, regional teams and operations.",fields:["Office / Branch", "Country", "Region", "Manager", "Currency", "Exhibitions", "Status"],rows:[]},
 "Regional Sales & Ownership":{desc:"Regional sales ownership, event ownership assignments, team territories and targets.",fields:["Region", "Exhibition", "Owner", "Sales team", "Target (AED)", "Actual (AED)", "Status"],rows:[]},
 "Calendar Conflict Detection":{desc:"Cross-portfolio date clash detection for events, venues, halls and organizer schedules.",fields:["Exhibition", "Venue", "Start date", "End date", "Conflict check", "Conflicting event", "Resolution"],rows:[]},
