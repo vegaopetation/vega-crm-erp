@@ -35,6 +35,7 @@ export default function ExhibitorDatabasePage() {
   const [masterCustomers,setMasterCustomers] = useState<Omit<MasterCompany,"projects">[]>([]);
   const [selectedCustomerId,setSelectedCustomerId] = useState("");
   const [suggestionField,setSuggestionField] = useState<"company"|"email"|null>(null);
+  const [searchFocused,setSearchFocused] = useState(false);
   const [selectedIds,setSelectedIds] = useState<string[]>([]);
   const [search,setSearch] = useState("");
   const [filters,setFilters] = useState({country:"All countries",status:"All statuses",hall:"All halls",standType:"All stand types"});
@@ -101,6 +102,7 @@ export default function ExhibitorDatabasePage() {
   const filteredMaster=useMemo(()=>{const q=search.trim().toLowerCase();return masterItems.filter(x=>(!q||[x.company_name,x.contact_person,x.email,x.phone,x.country,...x.projects].some(v=>String(v||"").toLowerCase().includes(q)))&&(filters.country==="All countries"||x.country===filters.country)&&(filters.status==="All statuses"||x.status===filters.status)).sort((a,b)=>a.company_name.localeCompare(b.company_name,undefined,{sensitivity:"base"}));},[masterItems,search,filters]);
   const customerSuggestions=useMemo(()=>{const q=(suggestionField==="email"?draft.email:draft.company_name).trim().toLowerCase();if(!q||q.length<2)return [];return masterCustomers.filter(c=>(suggestionField==="email"?String(c.email||"").toLowerCase().includes(q):String(c.company_name||"").toLowerCase().includes(q)||String(c.email||"").toLowerCase().includes(q))).slice(0,8);},[masterCustomers,draft.company_name,draft.email,suggestionField]);
   const chooseCustomer=(c:Omit<MasterCompany,"projects">)=>{setSelectedCustomerId(c.id);setDraft(d=>({...d,company_name:c.company_name||"",contact_name:c.contact_person||"",email:c.email||"",phone:c.phone||"",source_country:c.country||""}));setSuggestionField(null);};
+  const searchSuggestions=useMemo(()=>{const q=search.trim().toLowerCase();if(!q||q.length<2||!searchFocused)return [];return masterCustomers.filter(c=>String(c.company_name||"").toLowerCase().includes(q)||String(c.email||"").toLowerCase().includes(q)).slice(0,7);},[masterCustomers,search,searchFocused]);
   const toggleSort=(key:keyof Exhibitor|"serial")=>setSort(s=>({key,direction:s.key===key&&s.direction==="asc"?"desc":"asc"}));
   const resetFilters=()=>{setSearch("");setFilters({country:"All countries",status:"All statuses",hall:"All halls",standType:"All stand types"});};
   const visibleIds=filtered.map(x=>x.id);
@@ -191,7 +193,7 @@ export default function ExhibitorDatabasePage() {
       </header>
       <div className="kif-filter-panel">
         <div className="kif-filter-grid">
-          <label className="kif-search"><Search size={17} className="text-gray-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search all exhibitor details…" className="w-full py-2 outline-none"/></label>
+          <label className="kif-search relative"><Search size={17} className="text-gray-400"/><input value={search} onFocus={()=>setSearchFocused(true)} onBlur={()=>setTimeout(()=>setSearchFocused(false),150)} onChange={e=>setSearch(e.target.value)} placeholder="Search company, email or exhibitor details…" className="w-full py-2 outline-none"/>{searchSuggestions.length>0&&<div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-lg border border-gray-200 bg-white shadow-xl">{searchSuggestions.map(c=><button type="button" key={c.id} onMouseDown={e=>e.preventDefault()} onClick={()=>{setSearch(c.company_name);setSearchFocused(false);}} className="block w-full border-b border-gray-100 px-3 py-2 text-left hover:bg-red-50"><span className="block font-semibold">{c.company_name}</span><span className="block text-xs text-gray-500">{c.email||"No email"} · {c.contact_person||"No contact"}</span></button>)}</div>}</label>
           <select aria-label="Filter by country" value={filters.country} onChange={e=>setFilters(f=>({...f,country:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2">{countries.map(c=><option key={c}>{c}</option>)}</select>
           <select aria-label="Filter by status" value={filters.status} onChange={e=>setFilters(f=>({...f,status:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2">{statuses.map(c=><option key={c}>{c}</option>)}</select>
           {!isMainDatabase&&<select aria-label="Filter by hall" value={filters.hall} onChange={e=>setFilters(f=>({...f,hall:e.target.value}))} className="rounded-lg border border-gray-200 px-3 py-2">{halls.map(c=><option key={c}>{c}</option>)}</select>}
