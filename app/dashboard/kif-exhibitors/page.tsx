@@ -39,13 +39,13 @@ export default function KifExhibitorListPage() {
   const load = useCallback(async () => {
     setBusy(true); setError("");
     try {
-      const {data:exs,error:exErr}=await client.from("exhibitions").select("id,name").order("name");
+      const {data:exs,error:exErr}=await client.from("exhibitions").select("id,name:exhibition_name").order("name");
       if(exErr) throw exErr;
       const list=(exs||[]) as {id:string;name:string}[]; setEvents(list);
       const chosen=list.find(e=>e.name.toLowerCase().includes("kuwait") && e.name.toLowerCase().includes("jewellery")) || list.find(e=>e.name.toLowerCase().includes("kif")) || list[0];
       if(!eventId && chosen) setEventId(chosen.id);
       const id=eventId || chosen?.id; if(!id) {setItems([]);return;}
-      const {data,error:rowsErr}=await client.from("exhibitors").select("id,company_name,contact_name,email,phone,status,source_sr_no,source_status,stand_no,area_sqm,stand_type,hall,source_country").eq("exhibition_id",id).order("company_name");
+      const {data,error:rowsErr}=await client.from("exhibitors").select("id,company_name,contact_name:contact_person,email,phone,status,source_sr_no,source_status,stand_no,area_sqm,stand_type,hall,source_country").eq("exhibition_id",id).order("company_name");
       if(rowsErr) throw rowsErr; setItems((data||[]) as Exhibitor[]);
     } catch(e:any) { setError(e?.message || "Unable to load exhibitor list. Check database connection and apply the KIF exhibitor migration."); }
     finally {setBusy(false);}
