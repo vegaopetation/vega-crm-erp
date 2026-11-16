@@ -424,3 +424,17 @@ input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus{
  .vega-login-card{width:100%;min-height:0;border-radius:26px;padding:24px 22px 58px}
  .vega-login-card h1{font-size:28px}
 }
+
+/* VEGA autocomplete dropdowns */
+.kif-autocomplete-menu{position:absolute;background:#fff;border:1px solid #e7e2e2;border-radius:12px;box-shadow:0 14px 34px rgba(28,20,20,.14),0 3px 8px rgba(28,20,20,.06);padding:6px;overflow-x:hidden;animation:kifAutocompleteIn .14s ease-out;transform-origin:top center}
+.kif-autocomplete-heading{padding:8px 10px 7px;color:#8b8585;font-size:9px;font-weight:800;letter-spacing:.12em}
+.kif-autocomplete-option{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 10px;border:0;border-radius:8px;background:transparent;text-align:left;cursor:pointer;transition:background .14s ease,color .14s ease}
+.kif-autocomplete-option+.kif-autocomplete-option{margin-top:2px}
+.kif-autocomplete-option:hover,.kif-autocomplete-option:focus-visible{background:#fff1f1;outline:none}
+.kif-autocomplete-icon{display:flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;height:30px;border-radius:8px;background:#fff0f0;color:#b5121b}
+.kif-autocomplete-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.kif-autocomplete-name{display:block;overflow:hidden;color:#242124;font-size:11px;font-weight:750;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}
+.kif-autocomplete-email{display:block;overflow:hidden;color:#777078;font-size:10px;font-weight:500;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}
+.kif-autocomplete-arrow{flex:0 0 auto;color:#b7afb1;transition:transform .14s ease,color .14s ease}
+.kif-autocomplete-option:hover .kif-autocomplete-arrow{color:#b5121b;transform:translateX(2px)}
+@keyframes kifAutocompleteIn{from{opacity:0;transform:translateY(-4px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
