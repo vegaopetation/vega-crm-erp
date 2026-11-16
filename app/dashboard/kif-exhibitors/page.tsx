@@ -70,7 +70,7 @@ export default function KifExhibitorListPage() {
       const records=parsed.slice(headerRow+1).map((r,i)=>{
         const company=get(r,"Company Name"); if(!company)return null;
         const sr=get(r,"SR.NO","SR NO","SR. NO"); const area=get(r,"Area (sqm)","Area sqm","Area"); const phone=get(r,"Contact Details","Contact Detail","Phone");
-        return {exhibition_id:eventId,company_name:company,contact_name:get(r,"Contact Person")||null,email:get(r,"E-Mail","Email","E Mail")||null,phone:phone||null,status:"confirmed",source_sr_no:sr||null,source_status:get(r,"Status")||null,stand_no:get(r,"Stand No","Stand Number")||null,area_sqm:area?Number(area.replace(/[^0-9.]/g,""))||null:null,stand_type:get(r,"Stand Type")||null,source_country:get(r,"Country","COUN TRY","COUNTRY")||null,source_row_number:headerRow+i+2};
+        return {exhibition_id:eventId,company_name:company,contact_person:get(r,"Contact Person")||null,email:get(r,"E-Mail","Email","E Mail")||null,phone:phone||null,status:"confirmed",source_sr_no:sr||null,source_status:get(r,"Status")||null,stand_no:get(r,"Stand No","Stand Number")||null,area_sqm:area?Number(area.replace(/[^0-9.]/g,""))||null:null,stand_type:get(r,"Stand Type")||null,source_country:get(r,"Country","COUN TRY","COUNTRY")||null,source_row_number:headerRow+i+2};
       }).filter(Boolean) as any[];
       if(!records.length) throw new Error("No company rows were found in the file.");
       const {error:insertErr}=await client.from("exhibitors").insert(records);
