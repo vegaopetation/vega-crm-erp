@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "../../../lib/supabase";
-import { ArrowLeft, Download, Search, Upload, RefreshCw, Users, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, Search, Upload, RefreshCw, Users, FileSpreadsheet, AlertCircle, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 type Exhibitor = {
@@ -59,6 +59,20 @@ export default function KifExhibitorListPage() {
   const exportCsv=()=>{const lines=[columns,...filtered.map(x=>[x.source_sr_no,x.company_name,x.source_status||x.status,x.contact_name,x.phone,x.email,x.stand_no,x.area_sqm,x.stand_type,x.source_country])];
     const csv=lines.map(r=>r.map(v=>{const s=String(v??"");return '"' + s.replace(/"/g,'""') + '"';}).join(",")).join("\r\n");
     const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement("a");a.href=url;a.download="KIF-2026-Exhibitors.csv";a.click();URL.revokeObjectURL(url);};
+  const deleteRow=async(item:Exhibitor)=>{
+    if(!window.confirm(`Delete ${item.company_name} from the KIF 2026 exhibitor list? This cannot be undone.`)) return;
+    setBusy(true);setMessage("");setError("");
+    try{const {error:deleteErr}=await client.from("exhibitors").delete().eq("id",item.id);if(deleteErr)throw deleteErr;setMessage(`Deleted ${item.company_name}.`);await load();}
+    catch(e:any){setError(e?.message||"Unable to delete this exhibitor.");}finally{setBusy(false);}
+  };
+  const deleteAll=async()=>{
+    if(!eventId) return;
+    if(!window.confirm(`DELETE ALL ${items.length} exhibitors from KIF 2026? This only affects this exhibition and cannot be undone. Continue?`)) return;
+    if(!window.confirm("Final confirmation: permanently delete every exhibitor record linked to KIF 2026?")) return;
+    setBusy(true);setMessage("");setError("");
+    try{const {error:deleteErr}=await client.from("exhibitors").delete().eq("exhibition_id",eventId);if(deleteErr)throw deleteErr;setMessage("All KIF 2026 exhibitor records have been deleted.");await load();}
+    catch(e:any){setError(e?.message||"Unable to delete the KIF exhibitor list.");}finally{setBusy(false);}
+  };
   const importCsv=async(file:File)=>{
     setBusy(true);setMessage("");setError("");
     try{
@@ -86,6 +100,7 @@ export default function KifExhibitorListPage() {
         <div className="flex flex-wrap gap-2">
           <button onClick={()=>fileRef.current?.click()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-[#b5121b] px-4 py-2.5 font-semibold text-white hover:bg-[#950e16] disabled:opacity-50"><Upload size={17}/> Import CSV</button>
           <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={e=>e.target.files?.[0]&&importCsv(e.target.files[0])}/>
+          <button onClick={deleteAll} disabled={busy||items.length===0} className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"><Trash2 size={17}/> Delete All</button>
           <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-semibold"><Download size={17}/> Export CSV</button>
           <button onClick={load} disabled={busy} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2.5"><RefreshCw size={17}/></button>
         </div>
@@ -101,9 +116,9 @@ export default function KifExhibitorListPage() {
       </div>
       <section className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3 text-sm font-semibold"><FileSpreadsheet size={17} className="text-[#b5121b]"/> KIF 2026 exhibitor database {busy&&<span className="ml-auto text-gray-400">Loading…</span>}</div>
-        <div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-left text-sm"><thead className="bg-[#f8f8f8] text-xs uppercase tracking-wide text-gray-500"><tr>{columns.map(c=><th key={c} className="px-4 py-3 font-semibold">{c}</th>)}</tr></thead><tbody className="divide-y divide-gray-100">
-          {filtered.map((x,i)=><tr key={x.id} className="hover:bg-red-50/30"><td className="px-4 py-3 text-gray-500">{x.source_sr_no||i+1}</td><td className="px-4 py-3 font-semibold">{x.company_name}</td><td className="px-4 py-3"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs">{x.source_status||x.status||"—"}</span></td><td className="px-4 py-3">{x.contact_name||"—"}</td><td className="px-4 py-3">{x.phone||"—"}</td><td className="px-4 py-3">{x.email||"—"}</td><td className="px-4 py-3">{x.stand_no||"—"}</td><td className="px-4 py-3">{x.area_sqm??"—"}</td><td className="px-4 py-3">{x.stand_type||"—"}</td><td className="px-4 py-3">{x.source_country||"—"}</td></tr>)}
-          {!busy&&!filtered.length&&<tr><td colSpan={10} className="px-4 py-16 text-center text-gray-500"><Users size={30} className="mx-auto mb-2 text-gray-300"/><p className="font-semibold text-gray-700">No exhibitors found</p><p className="mt-1 text-xs">Import a CSV export of the KIF Excel list, or adjust your search.</p></td></tr>}
+        <div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-left text-sm"><thead className="bg-[#f8f8f8] text-xs uppercase tracking-wide text-gray-500"><tr>{columns.map(c=><th key={c} className="px-4 py-3 font-semibold">{c}</th>)}<th className="px-4 py-3 font-semibold">Action</th></tr></thead><tbody className="divide-y divide-gray-100">
+          {filtered.map((x,i)=><tr key={x.id} className="hover:bg-red-50/30"><td className="px-4 py-3 text-gray-500">{x.source_sr_no||i+1}</td><td className="px-4 py-3 font-semibold">{x.company_name}</td><td className="px-4 py-3"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs">{x.source_status||x.status||"—"}</span></td><td className="px-4 py-3">{x.contact_name||"—"}</td><td className="px-4 py-3">{x.phone||"—"}</td><td className="px-4 py-3">{x.email||"—"}</td><td className="px-4 py-3">{x.stand_no||"—"}</td><td className="px-4 py-3">{x.area_sqm??"—"}</td><td className="px-4 py-3">{x.stand_type||"—"}</td><td className="px-4 py-3">{x.source_country||"—"}</td><td className="px-4 py-3"><button onClick={()=>deleteRow(x)} disabled={busy} title="Delete this exhibitor" aria-label={`Delete ${x.company_name}`} className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"><Trash2 size={14}/> Delete</button></td></tr>)}
+          {!busy&&!filtered.length&&<tr><td colSpan={11} className="px-4 py-16 text-center text-gray-500"><Users size={30} className="mx-auto mb-2 text-gray-300"/><p className="font-semibold text-gray-700">No exhibitors found</p><p className="mt-1 text-xs">Import a CSV export of the KIF Excel list, or adjust your search.</p></td></tr>}
         </tbody></table></div>
       </section>
       <p className="mt-3 text-xs text-gray-500">Excel import note: open the source workbook and Save As CSV first. Imported records are event-specific and traceable by source row number.</p>
