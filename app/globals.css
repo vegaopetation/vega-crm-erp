@@ -320,3 +320,107 @@ input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus{
 .vega-card-skyline{color:#cf0013}
 .vega-login-logo .vega-official-logo{width:205px;height:108px}
 @media(max-width:760px){.vega-login-brand{background:rgba(255,255,255,.9);padding:24px 10px;border-radius:18px}.vega-login-card{border-radius:26px;padding:24px 22px 58px}}
+
+/* VEGA login visual refinement — CSS-only premium exhibition aesthetic (no flattened artwork) */
+.vega-login{
+  background:
+    radial-gradient(ellipse at 50% 10%,rgba(255,255,255,.98) 0%,rgba(250,247,244,.95) 42%,rgba(226,222,220,.92) 100%),
+    linear-gradient(135deg,#f7f4f1,#e9e5e2);
+  isolation:isolate;
+}
+.vega-login:before{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  top:-95px;left:-5%;width:110%;height:190px;
+  border:0;border-radius:0 0 55% 45% / 0 0 42% 35%;
+  background:linear-gradient(170deg,#6f0008 0%,#a8000b 42%,#d60c18 72%,#f12a32 100%);
+  box-shadow:0 12px 24px rgba(90,0,0,.22);
+  transform:rotate(-1.8deg);
+}
+.vega-login:after{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  bottom:-125px;left:-5%;width:110%;height:205px;
+  border:0;border-radius:55% 45% 0 0 / 38% 42% 0 0;
+  background:linear-gradient(8deg,#760008 0%,#a9000c 45%,#df101c 76%,#f43a40 100%);
+  box-shadow:0 -10px 25px rgba(90,0,0,.16);
+  transform:rotate(1.3deg);
+}
+.vega-login-inner{
+  width:min(1500px,100%);min-height:min(850px,calc(100vh - 64px));
+  grid-template-columns:minmax(0,1.04fr) minmax(450px,.96fr);
+  gap:clamp(20px,3vw,52px);align-items:center;
+}
+.vega-login-brand{
+  min-height:660px;padding:42px 36px 110px 4%;
+  border-radius:30px;
+  background:linear-gradient(115deg,rgba(255,255,255,.91),rgba(255,252,249,.83) 72%,rgba(255,255,255,.56));
+  border:1px solid rgba(255,255,255,.82);
+  box-shadow:0 18px 48px rgba(64,40,35,.09);
+  backdrop-filter:blur(8px);
+}
+.vega-login-brand:before{
+  content:"";position:absolute;inset:0;z-index:-1;border-radius:30px;
+  background:radial-gradient(ellipse at 88% 10%,rgba(173,0,13,.08),transparent 48%);
+}
+.vega-brand-lockup{gap:10px}
+.vega-official-logo-large{width:min(365px,58%);height:126px;object-fit:contain;object-position:left center}
+.vega-brand-divider{height:104px;background:#a90010;width:2px;margin:0 8px}
+.vega-crm-word{font-size:clamp(34px,3.2vw,46px);color:#202024}
+.vega-crm-word span{color:#b00010}
+.vega-login-brand h2{font-size:clamp(28px,2.65vw,38px);line-height:1.16;margin:36px 0 17px;color:#242326;letter-spacing:-.9px}
+.vega-red-rule{height:5px;width:155px;background:linear-gradient(90deg,#8d0009,#df101b);margin-bottom:30px}
+.vega-feature-row{gap:10px;max-width:690px}
+.vega-feature{font-size:12px;color:#272428}
+.vega-feature>span{
+  width:66px;height:66px;border-radius:17px;border:1.5px solid #d9a6a8;
+  background:linear-gradient(145deg,#fff,#faf3f1);color:#b60012;
+  box-shadow:0 6px 16px rgba(95,0,10,.07);
+}
+.vega-skyline{height:100px;bottom:6px;color:#766c6b;opacity:.58}
+.vega-login-panel{padding:12px 0}
+.vega-login-card{
+  width:min(100%,590px);min-height:660px;padding:34px 42px 64px;
+  border:2px solid #b60012;border-radius:44px;
+  background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(255,251,250,.97));
+  box-shadow:0 24px 65px rgba(80,0,8,.2),inset 0 0 0 5px rgba(182,0,18,.025);
+}
+.vega-login-logo .vega-official-logo{width:205px;height:112px;object-fit:contain}
+.vega-login-card h1{font-size:36px;margin:10px 0 7px;color:#242226}
+.vega-login-card h1 span{color:#b40011}
+.vega-login-subtitle{font-size:15px;color:#656168;margin-bottom:27px}
+.vega-input-wrap{
+  height:58px;border:1.5px solid #c9c5c5;border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fdfcfc);
+  box-shadow:inset 0 1px 2px rgba(30,10,10,.035);
+}
+.vega-input-wrap:focus-within{border-color:#b50012;box-shadow:0 0 0 3px rgba(181,0,18,.1)}
+.vega-forgot{margin:12px 0 20px}
+.vega-forgot a,.vega-register a{color:#ae0010}
+.vega-submit{
+  height:59px;border-radius:15px;
+  background:linear-gradient(100deg,#d80b1a 0%,#b90012 60%,#870009 100%);
+  box-shadow:0 10px 22px rgba(150,0,12,.22);
+  font-size:19px;letter-spacing:.1px;
+}
+.vega-submit:hover{filter:brightness(1.04);transform:translateY(-1px)}
+.vega-remember input{accent-color:#b60012}
+.vega-card-skyline{color:#c50014;height:53px;bottom:10px}
+@media(max-width:1050px){
+ .vega-login-inner{grid-template-columns:minmax(0,1fr) minmax(390px,.94fr);gap:18px}
+ .vega-login-brand{padding:34px 22px 100px}
+ .vega-official-logo-large{width:min(300px,58%);height:105px}
+ .vega-login-card{padding:30px 30px 60px}
+}
+@media(max-width:760px){
+ .vega-login{background:linear-gradient(145deg,#f8f5f2,#e8e3e0);padding:16px 12px}
+ .vega-login:before{height:90px;top:-58px}
+ .vega-login:after{height:90px;bottom:-65px}
+ .vega-login-inner{display:flex;flex-direction:column;gap:12px;min-height:0}
+ .vega-login-brand{width:100%;min-height:0;padding:22px 12px 18px;border-radius:20px}
+ .vega-login-brand h2{font-size:23px;margin:18px 0 10px;text-align:center}
+ .vega-feature>span{width:44px;height:44px;border-radius:12px}
+ .vega-feature{font-size:9px}
+ .vega-skyline{display:none}
+ .vega-login-panel{width:100%;padding:0}
+ .vega-login-card{width:100%;min-height:0;border-radius:26px;padding:24px 22px 58px}
+ .vega-login-card h1{font-size:28px}
+}
