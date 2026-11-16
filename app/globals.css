@@ -482,7 +482,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus{
 .kif-search-mode{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0;color:#625b60;font-size:10px;font-weight:750}
 .kif-search-mode select{width:100%;height:42px;border:1px solid #dedfea;border-radius:11px;background:#fff;padding:0 10px;color:#282329;font-size:12px;font-weight:650}
 .kif-search-tools .kif-search{min-width:0}
-.kif-table{table-layout:auto}
+.kif-table{table-layout:fixed}
 .kif-table col{min-width:76px}
 @media(max-width:1050px){.kif-search-tools{grid-template-columns:minmax(115px,.48fr) minmax(180px,1fr)}}
 @media(max-width:640px){.kif-search-tools{grid-template-columns:1fr}.kif-search-mode{gap:5px}.kif-search-mode select{height:40px}}
@@ -507,3 +507,17 @@ input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus{
 .kif-search-tools,.kif-search{position:relative;z-index:62}
 .kif-search-tools .kif-autocomplete-menu{z-index:9999;max-height:min(360px,55vh);overflow-y:auto;overscroll-behavior:contain}
 .kif-table-panel{position:relative;z-index:1}
+
+/* Stable pointer-driven column resizing and compact anchored autocomplete */
+.kif-table{table-layout:fixed;width:max-content;min-width:100%}
+.kif-table th{overflow:visible}
+.kif-col-resize{right:-7px;width:16px;z-index:30;touch-action:none;cursor:col-resize;pointer-events:auto}
+.kif-col-resize:before{left:7px;width:3px;top:16%;bottom:16%;background:#b9a9ca}
+.kif-col-resize:hover:before,.kif-col-resize.is-resizing:before{left:6px;width:5px;top:5%;bottom:5%;background:#b5121b}
+.kif-search{position:relative;z-index:100;min-width:0}
+.kif-search .kif-autocomplete-menu{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:10000;width:100%;max-height:240px;overflow-y:auto;overscroll-behavior:contain}
+.kif-filter-panel{position:relative;z-index:100;overflow:visible}
+.kif-filter-grid{position:relative;z-index:101;overflow:visible}
+.kif-search-tools{position:relative;z-index:102;min-width:0}
+.kif-table-panel{position:relative;z-index:1}
+@media(max-width:640px){.kif-search .kif-autocomplete-menu{max-height:210px}}
