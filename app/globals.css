@@ -224,3 +224,10 @@ input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus{
 .kif-note{margin:12px 2px 0;color:var(--muted);font-size:10px}
 @media(max-width:1050px){.kif-page{padding:22px}.kif-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.kif-page{padding:16px 12px}.kif-header{align-items:flex-start;flex-direction:column}.kif-actions{width:100%}.kif-actions button{flex:1}.kif-filter-grid{grid-template-columns:1fr}.kif-filter-panel{padding:13px}}
+
+.auth-links{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:18px;font-size:11px;color:var(--muted)}
+.auth-links a{color:var(--red);font-weight:700;text-decoration:none}
+.auth-links a:hover{text-decoration:underline}
+.auth-notice{margin-top:15px;padding:12px;border:1px solid #d8eadc;border-radius:8px;background:#f2fbf4;color:#245b32;font-size:11px;line-height:1.6}
+.auth-notice .auth-links{justify-content:flex-start;margin-top:8px}
+.login-card small{line-height:1.6}
