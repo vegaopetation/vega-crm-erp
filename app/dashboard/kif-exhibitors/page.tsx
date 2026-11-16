@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "../../../lib/supabase";
-import { ArrowLeft, Download, Search, Upload, RefreshCw, Users, FileSpreadsheet, AlertCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Search, Upload, RefreshCw, Users, FileSpreadsheet, AlertCircle, Trash2, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 
 type Exhibitor = {
@@ -35,6 +35,8 @@ export default function KifExhibitorListPage() {
   const [busy,setBusy] = useState(false);
   const [message,setMessage] = useState("");
   const [error,setError] = useState("");
+  const [editor,setEditor] = useState<Exhibitor|null|false>(false);
+  const [draft,setDraft] = useState({company_name:"",contact_name:"",email:"",phone:"",source_status:"",source_sr_no:"",stand_no:"",area_sqm:"",stand_type:"",source_country:"",hall:""});
   const fileRef = useRef<HTMLInputElement>(null);
   const load = useCallback(async () => {
     setBusy(true); setError("");
@@ -59,6 +61,19 @@ export default function KifExhibitorListPage() {
   const exportCsv=()=>{const lines=[columns,...filtered.map(x=>[x.source_sr_no,x.company_name,x.source_status||x.status,x.contact_name,x.phone,x.email,x.stand_no,x.area_sqm,x.stand_type,x.source_country])];
     const csv=lines.map(r=>r.map(v=>{const s=String(v??"");return '"' + s.replace(/"/g,'""') + '"';}).join(",")).join("\r\n");
     const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement("a");a.href=url;a.download="KIF-2026-Exhibitors.csv";a.click();URL.revokeObjectURL(url);};
+  const openAdd=()=>{setDraft({company_name:"",contact_name:"",email:"",phone:"",source_status:"",source_sr_no:"",stand_no:"",area_sqm:"",stand_type:"",source_country:"",hall:""});setEditor(null);setError("");};
+  const openEdit=(item:Exhibitor)=>{setDraft({company_name:item.company_name||"",contact_name:item.contact_name||"",email:item.email||"",phone:item.phone||"",source_status:item.source_status||"",source_sr_no:item.source_sr_no||"",stand_no:item.stand_no||"",area_sqm:item.area_sqm==null?"":String(item.area_sqm),stand_type:item.stand_type||"",source_country:item.source_country||"",hall:item.hall||""});setEditor(item);setError("");};
+  const saveExhibitor=async(e:React.FormEvent<HTMLFormElement>)=>{
+    e.preventDefault(); if(!eventId)return;
+    if(!draft.company_name.trim()){setError("Company name is required.");return;}
+    setBusy(true);setError("");setMessage("");
+    const payload={company_name:draft.company_name.trim(),contact_person:draft.contact_name.trim()||null,email:draft.email.trim()||null,phone:draft.phone.trim()||null,source_status:draft.source_status.trim()||null,source_sr_no:draft.source_sr_no.trim()||null,stand_no:draft.stand_no.trim()||null,area_sqm:draft.area_sqm.trim()?Number(draft.area_sqm):null,stand_type:draft.stand_type.trim()||null,source_country:draft.source_country.trim()||null,hall:draft.hall.trim()||null};
+    try{
+      const result=editor?await client.from("exhibitors").update(payload).eq("id",editor.id):await client.from("exhibitors").insert({...payload,exhibition_id:eventId,status:"confirmed"});
+      if(result.error)throw result.error;
+      setEditor(false);setMessage(editor?"Exhibitor updated successfully.":"Exhibitor added successfully.");await load();
+    }catch(err:any){setError(err?.message||"Unable to save exhibitor.");}finally{setBusy(false);}
+  };
   const deleteRow=async(item:Exhibitor)=>{
     if(!window.confirm(`Delete ${item.company_name} from the KIF 2026 exhibitor list? This cannot be undone.`)) return;
     setBusy(true);setMessage("");setError("");
@@ -98,6 +113,7 @@ export default function KifExhibitorListPage() {
       <header className="mt-5 flex flex-wrap items-center justify-between gap-4">
         <div><p className="text-xs font-bold tracking-[.18em] text-[#b5121b]">VEGA INTERTRADE & EXHIBITIONS</p><h1 className="mt-1 text-3xl font-bold">Exhibitor List</h1><p className="mt-1 text-gray-500">{EVENT_NAME}</p></div>
         <div className="flex flex-wrap gap-2">
+          <button onClick={openAdd} disabled={busy} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-semibold"><Plus size={17}/> Add Exhibitor</button>
           <button onClick={()=>fileRef.current?.click()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-[#b5121b] px-4 py-2.5 font-semibold text-white hover:bg-[#950e16] disabled:opacity-50"><Upload size={17}/> Import CSV</button>
           <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={e=>e.target.files?.[0]&&importCsv(e.target.files[0])}/>
           <button onClick={deleteAll} disabled={busy||items.length===0} className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"><Trash2 size={17}/> Delete All</button>
@@ -117,10 +133,11 @@ export default function KifExhibitorListPage() {
       <section className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3 text-sm font-semibold"><FileSpreadsheet size={17} className="text-[#b5121b]"/> KIF 2026 exhibitor database {busy&&<span className="ml-auto text-gray-400">Loading…</span>}</div>
         <div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-left text-sm"><thead className="bg-[#f8f8f8] text-xs uppercase tracking-wide text-gray-500"><tr>{columns.map(c=><th key={c} className="px-4 py-3 font-semibold">{c}</th>)}<th className="px-4 py-3 font-semibold">Action</th></tr></thead><tbody className="divide-y divide-gray-100">
-          {filtered.map((x,i)=><tr key={x.id} className="hover:bg-red-50/30"><td className="px-4 py-3 text-gray-500">{x.source_sr_no||i+1}</td><td className="px-4 py-3 font-semibold">{x.company_name}</td><td className="px-4 py-3"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs">{x.source_status||x.status||"—"}</span></td><td className="px-4 py-3">{x.contact_name||"—"}</td><td className="px-4 py-3">{x.phone||"—"}</td><td className="px-4 py-3">{x.email||"—"}</td><td className="px-4 py-3">{x.stand_no||"—"}</td><td className="px-4 py-3">{x.area_sqm??"—"}</td><td className="px-4 py-3">{x.stand_type||"—"}</td><td className="px-4 py-3">{x.source_country||"—"}</td><td className="px-4 py-3"><button onClick={()=>deleteRow(x)} disabled={busy} title="Delete this exhibitor" aria-label={`Delete ${x.company_name}`} className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"><Trash2 size={14}/> Delete</button></td></tr>)}
+          {filtered.map((x,i)=><tr key={x.id} className="hover:bg-red-50/30"><td className="px-4 py-3 text-gray-500">{x.source_sr_no||i+1}</td><td className="px-4 py-3 font-semibold">{x.company_name}</td><td className="px-4 py-3"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs">{x.source_status||x.status||"—"}</span></td><td className="px-4 py-3">{x.contact_name||"—"}</td><td className="px-4 py-3">{x.phone||"—"}</td><td className="px-4 py-3">{x.email||"—"}</td><td className="px-4 py-3">{x.stand_no||"—"}</td><td className="px-4 py-3">{x.area_sqm??"—"}</td><td className="px-4 py-3">{x.stand_type||"—"}</td><td className="px-4 py-3">{x.source_country||"—"}</td><td className="px-4 py-3"><button onClick={()=>openEdit(x)} disabled={busy} title="Edit this exhibitor" className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"><Pencil size={14}/> Edit</button> <button onClick={()=>deleteRow(x)} disabled={busy} title="Delete this exhibitor" aria-label={`Delete ${x.company_name}`} className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"><Trash2 size={14}/> Delete</button></td></tr>)}
           {!busy&&!filtered.length&&<tr><td colSpan={11} className="px-4 py-16 text-center text-gray-500"><Users size={30} className="mx-auto mb-2 text-gray-300"/><p className="font-semibold text-gray-700">No exhibitors found</p><p className="mt-1 text-xs">Import a CSV export of the KIF Excel list, or adjust your search.</p></td></tr>}
         </tbody></table></div>
       </section>
+      {editor!==false&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><form onSubmit={saveExhibitor} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-bold">{editor?"Edit Exhibitor":"Add Exhibitor"}</h2><button type="button" onClick={()=>setEditor(false)} className="rounded-md px-3 py-1 text-gray-500 hover:bg-gray-100">Close</button></div><div className="grid gap-4 sm:grid-cols-2">{([{key:"company_name",label:"Company Name",required:true},{key:"contact_name",label:"Contact Person"},{key:"phone",label:"Contact Details / Phone"},{key:"email",label:"Email"},{key:"source_sr_no",label:"SR. No."},{key:"source_status",label:"Source Status"},{key:"stand_no",label:"Stand No."},{key:"area_sqm",label:"Area (sqm)",type:"number"},{key:"stand_type",label:"Stand Type"},{key:"source_country",label:"Country"},{key:"hall",label:"Hall"}] as const).map(field=><label key={field.key} className="block text-sm font-medium text-gray-700">{field.label}<input required={"required" in field?field.required:false} type={"type" in field?field.type:"text"} min={"type" in field&&field.type==="number"?0:undefined} step={"type" in field&&field.type==="number"?"any":undefined} value={draft[field.key]} onChange={e=>setDraft(d=>({...d,[field.key]:e.target.value}))} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-[#b5121b]"/></label>)}</div><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={()=>setEditor(false)} className="rounded-lg border px-4 py-2">Cancel</button><button type="submit" disabled={busy} className="rounded-lg bg-[#b5121b] px-5 py-2 font-semibold text-white disabled:opacity-50">{busy?"Saving…":"Save Exhibitor"}</button></div></form></div>}
       <p className="mt-3 text-xs text-gray-500">Excel import note: open the source workbook and Save As CSV first. Imported records are event-specific and traceable by source row number.</p>
     </div>
   </main>;
