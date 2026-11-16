@@ -14,6 +14,7 @@ type Exhibitor = {
 const EVENT_NAME = "25th Kuwait International Gold & Jewellery Exhibition (KIF) — 2026";
 const columns = ["SR.NO", "Company Name", "Status", "Contact Person", "Contact Details", "E-Mail", "Stand No", "Area (sqm)", "Stand Type", "Country"];
 const norm = (s: string) => s.trim().toLowerCase().replace(/[._-]/g, " ").replace(/\s+/g, " ");
+const duplicateKey = (company: string, stand: string) => `${norm(company)}::${norm(stand || "")}`;
 function parseCsv(text: string) {
   const rows: string[][] = []; let row: string[] = []; let cell = ""; let quoted = false;
   for (let i=0;i<text.length;i++) { const c=text[i];
@@ -66,6 +67,11 @@ export default function KifExhibitorListPage() {
   const saveExhibitor=async(e:React.FormEvent<HTMLFormElement>)=>{
     e.preventDefault(); if(!eventId)return;
     if(!draft.company_name.trim()){setError("Company name is required.");return;}
+    const {data:matches,error:checkError}=await client.from("exhibitors").select("id,company_name,stand_no").eq("exhibition_id",eventId);
+    if(checkError){setError(checkError.message);return;}
+    const key=duplicateKey(draft.company_name,draft.stand_no);
+    const duplicate=(matches||[]).find((x:any)=>x.id!==(editor && editor!==false ? editor.id : "") && duplicateKey(x.company_name||"",x.stand_no||"")===key);
+    if(duplicate){setError(`Duplicate blocked: ${draft.company_name} already exists for stand ${draft.stand_no||"(blank)"}.`);return;}
     setBusy(true);setError("");setMessage("");
     const payload={company_name:draft.company_name.trim(),contact_person:draft.contact_name.trim()||null,email:draft.email.trim()||null,phone:draft.phone.trim()||null,source_status:draft.source_status.trim()||null,source_sr_no:draft.source_sr_no.trim()||null,stand_no:draft.stand_no.trim()||null,area_sqm:draft.area_sqm.trim()?Number(draft.area_sqm):null,stand_type:draft.stand_type.trim()||null,source_country:draft.source_country.trim()||null,hall:draft.hall.trim()||null};
     try{
@@ -102,9 +108,15 @@ export default function KifExhibitorListPage() {
         return {exhibition_id:eventId,company_name:company,contact_person:get(r,"Contact Person")||null,email:get(r,"E-Mail","Email","E Mail")||null,phone:phone||null,status:"confirmed",source_sr_no:sr||null,source_status:get(r,"Status")||null,stand_no:get(r,"Stand No","Stand Number")||null,area_sqm:area?Number(area.replace(/[^0-9.]/g,""))||null:null,stand_type:get(r,"Stand Type")||null,source_country:get(r,"Country","COUN TRY","COUNTRY")||null,source_row_number:headerRow+i+2};
       }).filter(Boolean) as any[];
       if(!records.length) throw new Error("No company rows were found in the file.");
-      const {error:insertErr}=await client.from("exhibitors").insert(records);
+      const {data:existing,error:existingErr}=await client.from("exhibitors").select("company_name,stand_no").eq("exhibition_id",eventId);
+      if(existingErr) throw existingErr;
+      const seen=new Set((existing||[]).map((x:any)=>duplicateKey(x.company_name||"",x.stand_no||"")));
+      const unique:any[]=[]; let skipped=0;
+      for(const record of records){const key=duplicateKey(record.company_name,record.stand_no||"");if(seen.has(key)){skipped++;continue;}seen.add(key);unique.push(record);}
+      if(!unique.length){setMessage(`No new exhibitors imported. ${skipped} duplicate row(s) were skipped.`);return;}
+      const {error:insertErr}=await client.from("exhibitors").insert(unique);
       if(insertErr) throw insertErr;
-      setMessage(`Imported ${records.length} exhibitor rows for KIF 2026.`); await load();
+      setMessage(`Imported ${unique.length} new exhibitor(s). Skipped ${skipped} duplicate row(s).`); await load();
     }catch(e:any){setError(e?.message||"Import failed.");}finally{setBusy(false);if(fileRef.current)fileRef.current.value="";}
   };
   return <main className="min-h-screen bg-[#f7f7f8] p-4 md:p-8 text-[#191919]">
