@@ -86,7 +86,7 @@ export default function KifExhibitorListPage() {
     const {data:matches,error:checkError}=await client.from("exhibitors").select("id,company_name,stand_no").eq("exhibition_id",eventId);
     if(checkError){setError(checkError.message);return;}
     const key=duplicateKey(draft.company_name,draft.stand_no);
-    const duplicate=(matches||[]).find((x:any)=>x.id!==(editor && editor!==false ? editor.id : "") && duplicateKey(x.company_name||"",x.stand_no||"")===key);
+    const duplicate=(matches||[]).find((x:any)=>x.id!==(editor !== false && editor !== null ? editor.id : "") && duplicateKey(x.company_name||"",x.stand_no||"")===key);
     if(duplicate){setError(`Duplicate blocked: ${draft.company_name} already exists for stand ${draft.stand_no||"(blank)"}.`);return;}
     setBusy(true);setError("");setMessage("");
     const payload={company_name:draft.company_name.trim(),contact_person:draft.contact_name.trim()||null,email:draft.email.trim()||null,phone:draft.phone.trim()||null,source_status:draft.source_status.trim()||null,source_sr_no:draft.source_sr_no.trim()||null,stand_no:draft.stand_no.trim()||null,area_sqm:draft.area_sqm.trim()?Number(draft.area_sqm):null,stand_type:draft.stand_type.trim()||null,source_country:draft.source_country.trim()||null,hall:draft.hall.trim()||null};
