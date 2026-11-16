@@ -1,6 +1,6 @@
-# VEGA CRM & ERP — Expanded Application Workspace
+# VEGA Jewellery Events And Exhibitions — Application Workspace
 
-This ZIP is the latest available VEGA-branded Next.js/Supabase application workspace from the current build series. It includes the dashboard/navigation and database schema migrations for the broad exhibition CRM/ERP scope.
+This package contains the VEGA Jewellery Events And Exhibitions Next.js/Supabase application workspace. It includes the dashboard/navigation and database schema migrations for the exhibition, events, sales and operations platform.
 
 ## Windows local setup
 1. Install Node.js 20 LTS: https://nodejs.org/
