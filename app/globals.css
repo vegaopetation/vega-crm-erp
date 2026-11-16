@@ -282,3 +282,21 @@ input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus{
 .vega-login-card .error{position:relative;z-index:2;text-align:left}
 @media(max-width:1050px){.vega-login-inner{grid-template-columns:minmax(0,1fr) minmax(390px,.9fr);gap:14px}.vega-login-brand{padding-left:0}.vega-brand-word{font-size:60px}.vega-brand-name{font-size:19px;letter-spacing:3px}.vega-crm-word{font-size:36px}.vega-logo-mark{width:78px;height:90px;font-size:80px}.vega-login-brand h2{font-size:30px}.vega-login-card{padding:32px 30px 55px;min-height:630px}}
 @media(max-width:760px){.vega-login{padding:20px 12px;align-items:flex-start}.vega-login-inner{display:flex;flex-direction:column;gap:14px;min-height:0}.vega-login-brand{min-height:0;padding:28px 8px 8px;width:100%}.vega-brand-lockup{justify-content:center;gap:8px}.vega-logo-mark{width:48px;height:56px;font-size:50px}.vega-brand-word{font-size:42px;letter-spacing:-3px}.vega-brand-name{font-size:12px;letter-spacing:2px;margin-left:3px}.vega-brand-divider{height:55px;margin:0 3px}.vega-crm-word{font-size:24px}.vega-login-brand h2{font-size:23px;text-align:center;margin:20px 0 12px}.vega-red-rule{margin:0 auto 16px;width:110px;height:4px}.vega-feature-row{gap:5px;width:100%;max-width:none}.vega-feature{font-size:9px;gap:5px}.vega-feature>span{width:42px;height:42px;border-radius:12px}.vega-feature>span svg{width:22px;height:22px}.vega-skyline{display:none}.vega-login-panel{width:100%;padding:0}.vega-login-card{width:100%;min-height:0;padding:24px 22px 58px;border-radius:30px}.vega-login-logo .vega-logo-mark{width:48px;height:55px;font-size:49px}.vega-login-logo .vega-brand-word{font-size:42px}.vega-login-logo .vega-brand-name{font-size:14px;margin-left:53px;letter-spacing:3px}.vega-login-card h1{font-size:27px}.vega-login-subtitle{font-size:12px;margin-bottom:20px}.vega-input-wrap{height:50px;border-radius:14px}.vega-submit{height:52px;font-size:16px}.vega-login:before,.vega-login:after{height:80px;border-width:10px}.vega-login:before{top:-65px}.vega-login:after{bottom:-70px}}
+
+/* Final pass: use the approved exhibition-hall atmosphere and the official VEGA logo file */
+.vega-login{background:#eceef0 url('/vega-exhibition-hall.svg') center center/cover no-repeat}
+.vega-login:before{top:-112px;height:155px}
+.vega-login:after{bottom:-128px;height:155px}
+.vega-login-inner{grid-template-columns:minmax(0,1.08fr) minmax(440px,.92fr);gap:34px}
+.vega-login-brand{background:linear-gradient(90deg,rgba(255,255,255,.82),rgba(255,255,255,.62) 76%,rgba(255,255,255,.18));border-radius:24px;padding-left:4%;padding-right:2%}
+.vega-official-logo{display:block;object-fit:contain;object-position:center;width:220px;height:112px;max-width:100%;background:#fff;border-radius:5px}
+.vega-official-logo-large{width:min(390px,62%);height:128px;object-position:left center;background:transparent}
+.vega-login-logo{display:flex;justify-content:center;align-items:center;margin:0 auto 10px}
+.vega-login-logo .vega-official-logo{width:205px;height:110px;background:transparent}
+.vega-brand-divider{flex-shrink:0}
+.vega-login-card{background:rgba(255,255,255,.96);backdrop-filter:blur(8px)}
+.vega-login-card form>label:not(.vega-remember){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.vega-input-wrap{margin-top:15px}
+.vega-login-card h1{margin-top:12px}
+@media(max-width:1050px){.vega-official-logo-large{width:min(300px,58%);height:95px}.vega-login-logo .vega-official-logo{width:175px;height:94px}}
+@media(max-width:760px){.vega-login{background-position:center;background-size:cover}.vega-login-brand{background:rgba(255,255,255,.72);border-radius:18px;padding:22px 8px}.vega-official-logo-large{width:190px;height:62px}.vega-login-logo .vega-official-logo{width:155px;height:76px}.vega-login-inner{grid-template-columns:1fr}}
