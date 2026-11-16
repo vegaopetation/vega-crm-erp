@@ -197,6 +197,22 @@ export default function ExhibitorDatabasePage() {
           <button onClick={load} disabled={busy} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2.5"><RefreshCw size={17}/></button>
         </div>
       </header>
+      <section className="kif-colorfusion-hero">
+        <div className="kif-colorfusion-copy">
+          <span className="kif-colorfusion-eyebrow">VEGA CENTRAL DATABASE</span>
+          <h2>Exhibitor <span>Management</span></h2>
+          <p>Your central hub for managing companies, exhibitors and their participation across global exhibitions.</p>
+          <div className="kif-colorfusion-tags"><span>Connect</span><span>Collaborate</span><span>Grow</span></div>
+        </div>
+        <div className="kif-colorfusion-orbit kif-orbit-one"/><div className="kif-colorfusion-orbit kif-orbit-two"/>
+        <div className="kif-colorfusion-mark">V</div>
+      </section>
+      <section className="kif-colorfusion-metrics" aria-label="Exhibitor database overview">
+        <article className="kif-color-metric kif-metric-red"><div className="kif-metric-icon"><Building2 size={23}/></div><div><span>TOTAL COMPANIES</span><strong>{isMainDatabase?masterItems.length:items.length}</strong><small>Registered exhibitors</small></div><i className="kif-metric-spark"/></article>
+        <article className="kif-color-metric kif-metric-purple"><div className="kif-metric-icon"><FileSpreadsheet size={23}/></div><div><span>PROJECTS</span><strong>{events.length}</strong><small>Exhibition projects</small></div><i className="kif-metric-spark"/></article>
+        <article className="kif-color-metric kif-metric-teal"><div className="kif-metric-icon"><Users size={23}/></div><div><span>COUNTRIES</span><strong>{Math.max(0,countries.length-1)}</strong><small>Company locations</small></div><i className="kif-metric-spark"/></article>
+        <article className="kif-color-metric kif-metric-gold"><div className="kif-metric-icon"><RefreshCw size={23}/></div><div><span>DATABASE STATUS</span><strong>{busy?"SYNCING":"LIVE"}</strong><small>{error?"Needs attention":"Central records available"}</small></div><i className="kif-metric-spark"/></article>
+      </section>
       <div className="kif-filter-panel">
         <div className="kif-filter-grid">
           <label className="kif-search relative"><Search size={17} className="text-gray-400"/><input value={search} onFocus={()=>setSearchFocused(true)} onBlur={()=>setTimeout(()=>setSearchFocused(false),150)} onChange={e=>setSearch(e.target.value)} placeholder="Search company, email or exhibitor details…" className="w-full py-2 outline-none"/>{searchSuggestions.length>0&&<div className="kif-autocomplete-menu absolute left-0 right-0 top-full z-40 mt-2 max-h-72 overflow-y-auto">{searchSuggestions.length>0&&<div className="kif-autocomplete-heading">MATCHING COMPANIES</div>}{searchSuggestions.map(c=><button type="button" key={c.id} onMouseDown={e=>e.preventDefault()} onClick={()=>{setSearch(c.company_name);setSearchFocused(false);}} className="kif-autocomplete-option"><span className="kif-autocomplete-icon"><Building2 size={16}/></span><span className="kif-autocomplete-copy"><span className="kif-autocomplete-name">{c.company_name}</span></span><ChevronRight size={15} className="kif-autocomplete-arrow"/></button>)}</div>}</label>
