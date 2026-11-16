@@ -34,9 +34,13 @@ create table if not exists public.exhibitor_import_batches (
   completed_at timestamptz
 );
 alter table public.exhibitor_import_batches enable row level security;
-create policy "Team read exhibitor import batches" on public.exhibitor_import_batches for select to authenticated using (true);
-create policy "Team create exhibitor import batches" on public.exhibitor_import_batches for insert to authenticated with check (public.current_role() in ('admin','staff'));
-create policy "Admin staff update exhibitor import batches" on public.exhibitor_import_batches for update to authenticated using (public.current_role() in ('admin','staff')) with check (public.current_role() in ('admin','staff'));
-create policy "Admin delete exhibitor import batches" on public.exhibitor_import_batches for delete to authenticated using (public.is_admin());
-create index if not exists companies_name_lower_idx on public.companies (lower(name));
-create index if not exists companies_country_lower_idx on public.companies (lower(country));
+create policy "Authenticated team read exhibitor import batches" on public.exhibitor_import_batches for select to authenticated using (true);
+create policy "Authenticated team insert exhibitor import batches" on public.exhibitor_import_batches for insert to authenticated with check (auth.uid() is not null);
+create policy "Authenticated team update exhibitor import batches" on public.exhibitor_import_batches for update to authenticated using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "Authenticated team delete exhibitor import batches" on public.exhibitor_import_batches for delete to authenticated using (auth.uid() is not null);
+
+-- Exhibitors are shared internal CRM records. Existing RLS had no policies in this project.
+create policy "Authenticated team read exhibitors" on public.exhibitors for select to authenticated using (auth.uid() is not null);
+create policy "Authenticated team insert exhibitors" on public.exhibitors for insert to authenticated with check (auth.uid() is not null);
+create policy "Authenticated team update exhibitors" on public.exhibitors for update to authenticated using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "Authenticated team delete exhibitors" on public.exhibitors for delete to authenticated using (auth.uid() is not null);
