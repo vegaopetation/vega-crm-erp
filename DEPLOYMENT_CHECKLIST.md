@@ -1,4 +1,4 @@
-# VEGA CRM & ERP — Deployment checklist
+# VEGA Jewellery Events And Exhibitions — Deployment checklist
 
 ## Before deploying
 1. Back up the current Supabase database.
