@@ -499,3 +499,11 @@ input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus{
       url("https://images.unsplash.com/photo-1775314054195-85f31de0c944?ixlib=rb-4.1.0&q=85&fm=jpg&crop=entropy&cs=srgb") center/cover no-repeat;
   }
 }
+
+
+/* Keep the company autocomplete above the following database table */
+.kif-filter-panel{position:relative;z-index:60;overflow:visible}
+.kif-filter-grid{position:relative;z-index:61;overflow:visible}
+.kif-search-tools,.kif-search{position:relative;z-index:62}
+.kif-search-tools .kif-autocomplete-menu{z-index:9999;max-height:min(360px,55vh);overflow-y:auto;overscroll-behavior:contain}
+.kif-table-panel{position:relative;z-index:1}
