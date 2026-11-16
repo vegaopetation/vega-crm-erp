@@ -1,4 +1,4 @@
-# Oracle Cloud Free Tier Deployment (VEGA current workspace)
+# Oracle Cloud Free Tier Deployment (VEGA Jewellery Events And Exhibitions)
 
 ## Architecture and honest status
 This deploys the current VEGA Next.js workspace as a Docker container on an Ubuntu VM. It uses Supabase hosted Postgres/Auth/Storage as the backend; the browser app requires the Supabase URL and anon/public key. This is a deployable frontend workspace, **not the complete production ERP**. Several screens still use sample/scaffold data. Do not store sensitive passport/visa or payment information before production-grade features, authorization/RLS, backups, and security review are implemented.
@@ -31,7 +31,7 @@ docker compose version
 ## C. Upload source ZIP
 Upload this ZIP from Windows PowerShell (replace public IP/key paths):
 ```powershell
-scp -i "C:\path\oracle-key.key" "VEGA_CRM_ERP_Oracle_Free_Tier.zip" ubuntu@YOUR_PUBLIC_IP:/home/ubuntu/
+scp -i "C:\path\oracle-key.key" "VEGA_Jewellery_Events_And_Exhibitions_Oracle_Free_Tier.zip" ubuntu@YOUR_PUBLIC_IP:/home/ubuntu/
 ```
 On the VM:
 ```bash
