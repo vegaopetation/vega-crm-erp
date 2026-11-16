@@ -1,4 +1,4 @@
-# VEGA CRM & ERP — Release Readiness Review
+# VEGA Jewellery Events And Exhibitions — Release Readiness Review
 
 ## Static checks performed on this ZIP
 - ZIP archive integrity: passed.
