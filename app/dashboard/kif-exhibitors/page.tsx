@@ -39,7 +39,7 @@ export default function KifExhibitorListPage() {
   const load = useCallback(async () => {
     setBusy(true); setError("");
     try {
-      const {data:exs,error:exErr}=await client.from("exhibitions").select("id,name:exhibition_name").order("name");
+      const {data:exs,error:exErr}=await client.from("exhibitions").select("id,name:exhibition_name").order("exhibition_name");
       if(exErr) throw exErr;
       const list=(exs||[]) as {id:string;name:string}[]; setEvents(list);
       const chosen=list.find(e=>e.name.toLowerCase().includes("kuwait") && e.name.toLowerCase().includes("jewellery")) || list.find(e=>e.name.toLowerCase().includes("kif")) || list[0];
