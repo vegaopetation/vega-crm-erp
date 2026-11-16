@@ -1,0 +1,7 @@
+'use client';
+import Link from 'next/link';
+import {useState} from 'react';
+import {createClient} from '../../lib/supabase';
+export default function ForgotPassword(){const [email,setEmail]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage('');try{const supabase=createClient();const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:`${window.location.origin}/reset-password`});if(error)throw error;setMessage('If an account is registered with this email, a secure password reset link will be sent. Please check your inbox and spam folder.');}catch(err){setMessage(err instanceof Error?err.message:'Unable to request a password reset. Please try again.')}finally{setBusy(false)}}
+return <main className="login-wrap"><section className="login-card"><img src="/vega-logo.png" alt="VEGA" className="login-logo"/><h1>Reset your password</h1><p>Enter the email address registered with your VEGA Client Portal account.</p><form onSubmit={submit}><label>Email address</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="name@company.com"/><button disabled={busy}>{busy?'Sending…':'Send password reset link'}</button></form>{message&&<div className="auth-notice" role="status">{message}</div>}<div className="auth-links"><Link href="/login">Back to sign in</Link></div></section></main>}
