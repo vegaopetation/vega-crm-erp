@@ -14,13 +14,15 @@ This ZIP is the latest available VEGA-branded Next.js/Supabase application works
    - `supabase/migrations/0001_vega_schema.sql`
    - `supabase/migrations/0002_expansion_modules.sql`
    - `supabase/migrations/0003_advanced_business_ai_integrations.sql`
+   - `supabase/migrations/0004_deploy_hardening.sql`
+   - `supabase/migrations/0005_security_reconciliation.sql`
 7. Start with `npm run dev`; browse to http://localhost:3000.
 
 ## Deployment
 Deployment target is Vercel for the Next.js front end with Supabase PostgreSQL/Auth/Storage. Use `.env.example` as the environment variable reference. Never place a Supabase service-role key in a public/browser environment variable.
 
 ## Included workspace scope
-The app contains VEGA branding, grouped dashboard/module navigation, basic exhibition/CRM screens, booth grid/status UI, CSV export, and SQL schema foundations for companies/exhibitors, booth bookings, finance/accounting, operations, procurement, inventory/assets, documents/contracts, HR, communications, portal workflows, visitor/ticketing, analytics, compliance, franchise/branch, pricing, networking, AI insight domains, and integrations.
+The app contains VEGA branding, grouped dashboard/module navigation, basic exhibition/CRM screens, booth grid/status UI, CSV export, and SQL schema foundations for companies/exhibitors, booth bookings, finance/accounting, operations, procurement, inventory/assets, documents/contracts, HR, communications, portal workflows (client portal deferred until CRM completion), analytics, compliance, franchise/branch, pricing, networking, AI insight domains, and integrations. Visitor Registration & Ticketing is canceled and removed from active navigation.
 
 ## Critical implementation status (honest)
 This is **not yet a complete production-ready CRM/ERP**. Many module views are scaffolded and use sample or browser-session data; complete persistent CRUD for every module, full geometry-based draggable floorplan with background upload/layers, validated financial ledger and posting rules, PDF/receipt generation, secure role-specific policies, provider integrations (WhatsApp/email/payments), real AI calls, scheduled automation, end-to-end testing, and security review remain to be implemented. The schema is a foundation, not proof of finished business logic. Do not store real passport, visa, payment, or confidential exhibitor data until the missing controls and workflows are finished and reviewed.
