@@ -11,7 +11,6 @@ type Exhibitor = {
   source_status?: string | null; stand_no?: string | null; area_sqm?: number | null;
   stand_type?: string | null; hall?: string | null; source_country?: string | null;
 };
-const EVENT_NAME = "25th Kuwait International Gold & Jewellery Exhibition (KIF) — 2026";
 const columns = ["Serial Number", "Company Name", "Status", "Contact Person", "Contact Details", "E-Mail", "Stand No", "Area (sqm)", "Stand Type", "Country", "Hall"];
 const norm = (s: string) => s.trim().toLowerCase().replace(/[._-]/g, " ").replace(/\s+/g, " ");
 const duplicateKey = (company: string, stand: string) => `${norm(company)}::${norm(stand || "")}`;
@@ -26,7 +25,7 @@ function parseCsv(text: string) {
   }
   row.push(cell); if(row.some(v=>v.trim())) rows.push(row); return rows;
 }
-export default function KifExhibitorListPage() {
+export default function ExhibitorDatabasePage() {
   const [client] = useState(() => createClient());
   const [eventId,setEventId] = useState("");
   const [events,setEvents] = useState<{id:string;name:string}[]>([]);
@@ -52,7 +51,7 @@ export default function KifExhibitorListPage() {
       const id=eventId || chosen?.id; if(!id) {setItems([]);return;}
       const {data,error:rowsErr}=await client.from("exhibitors").select("id,company_name,contact_name:contact_person,email,phone,status,source_sr_no,source_status,stand_no,area_sqm,stand_type,hall,source_country").eq("exhibition_id",id).order("company_name");
       if(rowsErr) throw rowsErr; setItems((data||[]) as Exhibitor[]);
-    } catch(e:any) { setError(e?.message || "Unable to load exhibitor list. Check database connection and apply the KIF exhibitor migration."); }
+    } catch(e:any) { setError(e?.message || "Unable to load exhibitor list. Check database connection and apply the exhibitor database migration."); }
     finally {setBusy(false);}
   },[client,eventId]);
   useEffect(()=>{load();},[load]);
@@ -82,7 +81,7 @@ export default function KifExhibitorListPage() {
   const toggleVisible=()=>setSelectedIds(current=>allVisibleSelected?current.filter(id=>!visibleIds.includes(id)):Array.from(new Set([...current,...visibleIds])));
   const exportCsv=()=>{const lines=[columns,...filtered.map((x,i)=>[i+1,x.company_name,x.source_status||x.status,x.contact_name,x.phone,x.email,x.stand_no,x.area_sqm,x.stand_type,x.source_country,x.hall])];
     const csv=lines.map(r=>r.map(v=>{const s=String(v??"");return '"' + s.replace(/"/g,'""') + '"';}).join(",")).join("\r\n");
-    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement("a");a.href=url;a.download="KIF-2026-Exhibitors.csv";a.click();URL.revokeObjectURL(url);};
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement("a");a.href=url;a.download="Exhibitor-Database.csv";a.click();URL.revokeObjectURL(url);};
   const openAdd=()=>{setDraft({company_name:"",contact_name:"",email:"",phone:"",source_status:"",source_sr_no:"",stand_no:"",area_sqm:"",stand_type:"",source_country:"",hall:""});setEditor(null);setError("");};
   const openEdit=(item:Exhibitor)=>{setDraft({company_name:item.company_name||"",contact_name:item.contact_name||"",email:item.email||"",phone:item.phone||"",source_status:item.source_status||"",source_sr_no:item.source_sr_no||"",stand_no:item.stand_no||"",area_sqm:item.area_sqm==null?"":String(item.area_sqm),stand_type:item.stand_type||"",source_country:item.source_country||"",hall:item.hall||""});setEditor(item);setError("");};
   const saveExhibitor=async(e:React.FormEvent<HTMLFormElement>)=>{
@@ -102,30 +101,30 @@ export default function KifExhibitorListPage() {
     }catch(err:any){setError(err?.message||"Unable to save exhibitor.");}finally{setBusy(false);}
   };
   const deleteRow=async(item:Exhibitor)=>{
-    if(!window.confirm(`Delete ${item.company_name} from the KIF 2026 exhibitor list? This cannot be undone.`)) return;
+    if(!window.confirm(`Delete ${item.company_name} from the selected exhibition's exhibitor database? This cannot be undone.`)) return;
     setBusy(true);setMessage("");setError("");
     try{const {error:deleteErr}=await client.from("exhibitors").delete().eq("id",item.id);if(deleteErr)throw deleteErr;setMessage(`Deleted ${item.company_name}.`);await load();}
     catch(e:any){setError(e?.message||"Unable to delete this exhibitor.");}finally{setBusy(false);}
   };
   const deleteSelected=async()=>{
     if(!selectedIds.length)return;
-    if(!window.confirm("Permanently delete "+selectedIds.length+" selected exhibitor row(s) from KIF 2026? This cannot be undone."))return;
+    if(!window.confirm("Permanently delete "+selectedIds.length+" selected exhibitor row(s) from this exhibition? This cannot be undone."))return;
     setBusy(true);setMessage("");setError("");
     try{const {error:deleteErr}=await client.from("exhibitors").delete().in("id",selectedIds).eq("exhibition_id",eventId);if(deleteErr)throw deleteErr;const count=selectedIds.length;setSelectedIds([]);setMessage("Deleted "+count+" selected exhibitor row(s).");await load();}
     catch(e:any){setError(e?.message||"Unable to delete selected exhibitors.");}finally{setBusy(false);}
   };
   const deleteAll=async()=>{
     if(!eventId) return;
-    if(!window.confirm(`DELETE ALL ${items.length} exhibitors from KIF 2026? This only affects this exhibition and cannot be undone. Continue?`)) return;
-    if(!window.confirm("Final confirmation: permanently delete every exhibitor record linked to KIF 2026?")) return;
+    if(!window.confirm(`DELETE ALL ${items.length} exhibitors from the selected exhibition? This cannot be undone. Continue?`)) return;
+    if(!window.confirm("Final confirmation: permanently delete every exhibitor record linked to the selected exhibition?")) return;
     setBusy(true);setMessage("");setError("");
-    try{const {error:deleteErr}=await client.from("exhibitors").delete().eq("exhibition_id",eventId);if(deleteErr)throw deleteErr;setMessage("All KIF 2026 exhibitor records have been deleted.");await load();}
-    catch(e:any){setError(e?.message||"Unable to delete the KIF exhibitor list.");}finally{setBusy(false);}
+    try{const {error:deleteErr}=await client.from("exhibitors").delete().eq("exhibition_id",eventId);if(deleteErr)throw deleteErr;setMessage("All exhibitor records for the selected exhibition have been deleted.");await load();}
+    catch(e:any){setError(e?.message||"Unable to delete exhibitor records.");}finally{setBusy(false);}
   };
   const importCsv=async(file:File)=>{
     setBusy(true);setMessage("");setError("");
     try{
-      if(!eventId) throw new Error("Select the KIF 2026 exhibition first.");
+      if(!eventId) throw new Error("Select an exhibition first.");
       const parsed=parseCsv(await file.text()); if(parsed.length<2) throw new Error("The file has no data rows.");
       const headerRow=parsed.findIndex(r=>r.some(v=>norm(v).includes("company name"))); if(headerRow<0) throw new Error("Could not find the Company Name header. Export the Excel sheet as CSV and try again.");
       const headers=parsed[headerRow].map(norm);
@@ -151,8 +150,8 @@ export default function KifExhibitorListPage() {
     <div className="kif-content">
       <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#b5121b]"><ArrowLeft size={16}/> Back to VEGA Dashboard</Link>
       <header className="kif-header">
-        <div><p className="text-xs font-bold tracking-[.18em] text-[#b5121b]">VEGA INTERTRADE & EXHIBITIONS</p><h1 className="mt-1 text-3xl font-bold">Exhibitor List</h1><p className="mt-1 text-gray-500">{EVENT_NAME}</p></div>
-        <div className="kif-actions">
+        <div><p className="text-xs font-bold tracking-[.18em] text-[#b5121b]">VEGA INTERTRADE & EXHIBITIONS</p><h1 className="mt-1 text-3xl font-bold">Exhibitor database</h1><p className="mt-1 text-gray-500">{events.find(e=>e.id===eventId)?.name || "Select an exhibition to view its exhibitors"}</p></div>
+        <div className="kif-actions"><label className="flex items-center gap-2 text-sm font-semibold text-gray-700">Project / Exhibition<select aria-label="Select project or exhibition" value={eventId} onChange={e=>{setEventId(e.target.value);setSelectedIds([]);resetFilters();}} className="rounded-lg border border-gray-300 bg-white px-3 py-2.5">{events.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}</select></label>
           <button onClick={openAdd} disabled={busy} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-semibold"><Plus size={17}/> Add Exhibitor</button>
           <button onClick={()=>fileRef.current?.click()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-[#b5121b] px-4 py-2.5 font-semibold text-white hover:bg-[#950e16] disabled:opacity-50"><Upload size={17}/> Import CSV</button>
           <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={e=>e.target.files?.[0]&&importCsv(e.target.files[0])}/>
@@ -175,10 +174,10 @@ export default function KifExhibitorListPage() {
         {error&&<p className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800"><AlertCircle size={17} className="mt-0.5 shrink-0"/>{error}</p>}
       </div>
       <section className="kif-table-panel">
-        <div className="kif-table-title"><FileSpreadsheet size={17} className="text-[#b5121b]"/> KIF 2026 exhibitor database {busy&&<span className="ml-auto text-gray-400">Loading…</span>}</div>
+        <div className="kif-table-title"><FileSpreadsheet size={17} className="text-[#b5121b]"/> Exhibitor database {busy&&<span className="ml-auto text-gray-400">Loading…</span>}</div>
         <div className="kif-table-wrap"><table className="kif-table"><thead className="bg-[var(--vega-main-bg)] text-xs uppercase tracking-wide text-[var(--muted)]"><tr><th className="w-10 px-3 py-3"><input type="checkbox" aria-label="Select all visible rows" checked={allVisibleSelected} onChange={toggleVisible} disabled={!visibleIds.length||busy}/></th>{columns.map((c,i)=><th key={c} className="px-4 py-3 font-semibold whitespace-nowrap"><button type="button" onClick={()=>toggleSort((["serial","company_name","source_status","contact_name","phone","email","stand_no","area_sqm","stand_type","source_country","hall"] as const)[i])} className="inline-flex items-center gap-1 hover:text-[#b5121b]">{c}<span className="text-[#b5121b]">{sort.key===(["serial","company_name","source_status","contact_name","phone","email","stand_no","area_sqm","stand_type","source_country","hall"] as const)[i]?(sort.direction==="asc"?"↑":"↓"):"↕"}</span></button></th>)}<th className="px-4 py-3 font-semibold">Action</th></tr></thead><tbody className="divide-y divide-gray-100">
           {filtered.map((x,i)=><tr key={x.id} className={selectedIds.includes(x.id)?"bg-red-50/70 hover:bg-red-50":"hover:bg-red-50/30"}><td className="px-3 py-3"><input type="checkbox" aria-label={"Select "+x.company_name} checked={selectedIds.includes(x.id)} onChange={()=>toggleOne(x.id)} disabled={busy}/></td><td className="px-4 py-3 text-gray-500">{i+1}</td><td className="px-4 py-3 font-semibold">{x.company_name}</td><td className="px-4 py-3"><span className="rounded-full bg-gray-100 px-2 py-1 text-xs">{x.source_status||x.status||"—"}</span></td><td className="px-4 py-3">{x.contact_name||"—"}</td><td className="px-4 py-3">{x.phone||"—"}</td><td className="px-4 py-3">{x.email||"—"}</td><td className="px-4 py-3">{x.stand_no||"—"}</td><td className="px-4 py-3">{x.area_sqm??"—"}</td><td className="px-4 py-3">{x.stand_type||"—"}</td><td className="px-4 py-3">{x.source_country||"—"}</td><td className="px-4 py-3">{x.hall||"—"}</td><td className="px-4 py-3"><button onClick={()=>openEdit(x)} disabled={busy} title="Edit this exhibitor" className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40"><Pencil size={14}/> Edit</button> <button onClick={()=>deleteRow(x)} disabled={busy} title="Delete this exhibitor" aria-label={`Delete ${x.company_name}`} className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"><Trash2 size={14}/> Delete</button></td></tr>)}
-          {!busy&&!filtered.length&&<tr><td colSpan={13} className="px-4 py-16 text-center text-gray-500"><Users size={30} className="mx-auto mb-2 text-gray-300"/><p className="font-semibold text-gray-700">No exhibitors found</p><p className="mt-1 text-xs">Import a CSV export of the KIF Excel list, or adjust your search.</p></td></tr>}
+          {!busy&&!filtered.length&&<tr><td colSpan={13} className="px-4 py-16 text-center text-gray-500"><Users size={30} className="mx-auto mb-2 text-gray-300"/><p className="font-semibold text-gray-700">No exhibitors found</p><p className="mt-1 text-xs">Import a CSV file for the selected exhibition, or adjust your search.</p></td></tr>}
         </tbody></table></div>
       </section>
       {editor!==false&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><form onSubmit={saveExhibitor} className="kif-modal"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-bold">{editor?"Edit Exhibitor":"Add Exhibitor"}</h2><button type="button" onClick={()=>setEditor(false)} className="rounded-md px-3 py-1 text-gray-500 hover:bg-gray-100">Close</button></div><div className="grid gap-4 sm:grid-cols-2">{([{key:"company_name",label:"Company Name",required:true},{key:"contact_name",label:"Contact Person"},{key:"phone",label:"Contact Details / Phone"},{key:"email",label:"Email"},{key:"source_status",label:"Source Status"},{key:"stand_no",label:"Stand No."},{key:"area_sqm",label:"Area (sqm)",type:"number"},{key:"stand_type",label:"Stand Type"},{key:"source_country",label:"Country"},{key:"hall",label:"Hall"}] as const).map(field=><label key={field.key} className="block text-sm font-medium text-gray-700">{field.label}<input required={"required" in field?field.required:false} type={"type" in field?field.type:"text"} min={"type" in field&&field.type==="number"?0:undefined} step={"type" in field&&field.type==="number"?"any":undefined} value={draft[field.key]} onChange={e=>setDraft(d=>({...d,[field.key]:e.target.value}))} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-[#b5121b]"/></label>)}</div><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={()=>setEditor(false)} className="rounded-lg border px-4 py-2">Cancel</button><button type="submit" disabled={busy} className="rounded-lg bg-[var(--vega-primary)] px-5 py-2 font-semibold text-white shadow-md disabled:opacity-50">{busy?"Saving…":"Save Exhibitor"}</button></div></form></div>}
