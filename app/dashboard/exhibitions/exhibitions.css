@@ -1,0 +1,57 @@
+
+/* VEGA Exhibitions page responsive utility layer. The project currently has no Tailwind/PostCSS build, so these utilities are provided as real CSS. */
+main:has(.max-w-\[1600px\]){color:#f8f5f6;background:radial-gradient(ellipse at 12% 0%,rgba(174,12,32,.20),transparent 34%),radial-gradient(ellipse at 95% 90%,rgba(104,7,23,.16),transparent 35%),#09090b}
+main:has(.max-w-\[1600px\]) *{box-sizing:border-box}
+main:has(.max-w-\[1600px\]) button,main:has(.max-w-\[1600px\]) input,main:has(.max-w-\[1600px\]) select,main:has(.max-w-\[1600px\]) textarea{font:inherit}
+[class~="min-h-screen"]{min-height:100vh}[class~="w-full"]{width:100%}[class~="min-w-0"]{min-width:0}
+[class~="mx-auto"]{margin-left:auto;margin-right:auto}[class~="max-w-[1600px]"]{max-width:1600px}
+[class~="flex"]{display:flex}[class~="inline-flex"]{display:inline-flex}[class~="grid"]{display:grid}
+[class~="flex-wrap"]{flex-wrap:wrap}[class~="flex-col"]{flex-direction:column}[class~="flex-row"]{flex-direction:row}
+[class~="items-center"]{align-items:center}[class~="items-start"]{align-items:flex-start}[class~="items-end"]{align-items:flex-end}
+[class~="justify-center"]{justify-content:center}[class~="justify-between"]{justify-content:space-between}[class~="justify-end"]{justify-content:flex-end}
+[class~="flex-1"]{flex:1 1 0%}[class~="shrink-0"]{flex-shrink:0}[class~="block"]{display:block}[class~="inline"]{display:inline}
+[class~="grid-cols-3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+[class~="gap-1"]{gap:.25rem}[class~="gap-1.5"]{gap:.375rem}[class~="gap-2"]{gap:.5rem}[class~="gap-3"]{gap:.75rem}[class~="gap-4"]{gap:1rem}
+[class~="gap-x-4"]{column-gap:1rem}[class~="gap-y-1"]{row-gap:.25rem}
+[class~="overflow-hidden"]{overflow:hidden}[class~="overflow-x-hidden"]{overflow-x:hidden}
+[class~="rounded"]{border-radius:.25rem}[class~="rounded-lg"]{border-radius:.5rem}[class~="rounded-xl"]{border-radius:.75rem}[class~="border"]{border:1px solid rgba(255,255,255,.1)}
+[class~="border-b"]{border-bottom:1px solid rgba(255,255,255,.1)}[class~="border-t"]{border-top:1px solid rgba(255,255,255,.1)}
+[class~="border-white/10"]{border-color:rgba(255,255,255,.1)}[class~="border-0"]{border:0}
+[class~="border-dashed"]{border-style:dashed}[class~="border-gray-300"]{border-color:#4b4549}
+[class~="bg-transparent"]{background:transparent}[class~="bg-[#09090b]"]{background:#09090b}
+[class~="bg-[#191719]"]{background:#191719}[class~="bg-[#171417]"]{background:#171417}[class~="bg-[#111013]"]{background:#111013}
+[class~="bg-[#c8102e]"]{background:#c8102e}[class~="bg-red-50"]{background:#3b171c}[class~="border-red-100"]{border-color:#73303a}
+[class~="bg-gradient-to-br"]{background-image:linear-gradient(135deg,#21191c,#141316)}
+[class~="from-[#21191c]"]{--tw-gradient-from:#21191c}[class~="to-[#141316]"]{--tw-gradient-to:#141316}
+[class~="to-[#111013]"]{--tw-gradient-to:#111013}
+[class~="p-1"]{padding:.25rem}[class~="p-2"]{padding:.5rem}[class~="p-3"]{padding:.75rem}[class~="p-4"]{padding:1rem}[class~="p-5"]{padding:1.25rem}[class~="p-10"]{padding:2.5rem}[class~="p-12"]{padding:3rem}
+[class~="px-3"]{padding-left:.75rem;padding-right:.75rem}[class~="px-4"]{padding-left:1rem;padding-right:1rem}[class~="px-5"]{padding-left:1.25rem;padding-right:1.25rem}
+[class~="py-2"]{padding-top:.5rem;padding-bottom:.5rem}[class~="py-2.5"]{padding-top:.625rem;padding-bottom:.625rem}[class~="py-3"]{padding-top:.75rem;padding-bottom:.75rem}[class~="py-4"]{padding-top:1rem;padding-bottom:1rem}
+[class~="pb-3"]{padding-bottom:.75rem}[class~="pb-5"]{padding-bottom:1.25rem}
+[class~="mb-1"]{margin-bottom:.25rem}[class~="mb-2"]{margin-bottom:.5rem}[class~="mb-3"]{margin-bottom:.75rem}[class~="mb-4"]{margin-bottom:1rem}[class~="mb-5"]{margin-bottom:1.25rem}[class~="mb-6"]{margin-bottom:1.5rem}
+[class~="mt-1"]{margin-top:.25rem}[class~="mt-3"]{margin-top:.75rem}[class~="mt-4"]{margin-top:1rem}[class~="mt-5"]{margin-top:1.25rem}[class~="ml-auto"]{margin-left:auto}[class~="mr-1"]{margin-right:.25rem}
+[class~="h-28"]{height:7rem}[class~="h-8"]{height:2rem}[class~="h-12"]{height:3rem}[class~="max-h-full"]{max-height:100%}[class~="max-w-full"]{max-width:100%}[class~="max-w-20"]{max-width:5rem}[class~="max-w-32"]{max-width:8rem}
+[class~="text-center"]{text-align:center}[class~="text-xs"]{font-size:.75rem;line-height:1.2}[class~="text-sm"]{font-size:.875rem;line-height:1.45}[class~="text-base"]{font-size:1rem;line-height:1.5}[class~="text-lg"]{font-size:1.125rem;line-height:1.35}[class~="text-xl"]{font-size:1.25rem;line-height:1.3}[class~="text-2xl"]{font-size:1.5rem;line-height:1.2}[class~="text-3xl"]{font-size:1.875rem;line-height:1.2}
+[class~="font-medium"]{font-weight:500}[class~="font-semibold"]{font-weight:600}[class~="font-bold"]{font-weight:700}[class~="font-extrabold"]{font-weight:800}
+[class~="uppercase"]{text-transform:uppercase}[class~="tracking-tight"]{letter-spacing:-.025em}[class~="tracking-wide"]{letter-spacing:.025em}
+[class~="text-white"]{color:#fff}[class~="text-[#f8f5f6]"]{color:#f8f5f6}[class~="text-[#f7eef0]"]{color:#f7eef0}[class~="text-[#e8dce0]"]{color:#e8dce0}[class~="text-[#d8cdd0]"]{color:#d8cdd0}[class~="text-[#aaa0a5]"]{color:#aaa0a5}[class~="text-[#82777c]"]{color:#82777c}[class~="text-red-700"]{color:#ff6673}[class~="text-red-800"]{color:#ffc1c7}
+[class~="outline-none"]{outline:2px solid transparent;outline-offset:2px}[class~="border-0"]{border:0}
+[class~="shadow"]{box-shadow:0 4px 14px rgba(0,0,0,.18)}[class~="shadow-inner"]{box-shadow:inset 0 2px 5px rgba(0,0,0,.25)}
+[class~="shadow-[0_12px_30px_rgba(0,0,0,.24)]"]{box-shadow:0 12px 30px rgba(0,0,0,.24)}
+[class~="shadow-[0_12px_28px_rgba(0,0,0,.28)]"]{box-shadow:0 12px 28px rgba(0,0,0,.28)}
+[class~="shadow-[0_16px_40px_rgba(0,0,0,.3)]"]{box-shadow:0 16px 40px rgba(0,0,0,.3)}
+[class~="transition"]{transition:all .18s ease}
+[class~="object-contain"]{object-fit:contain}
+[class~="animate-spin"]{animation:vega-spin 1s linear infinite}@keyframes vega-spin{to{transform:rotate(360deg)}}
+[class~="disabled:opacity-60"]:disabled{opacity:.6}
+main:has(.max-w-\[1600px\]) button{cursor:pointer}
+main:has(.max-w-\[1600px\]) input,main:has(.max-w-\[1600px\]) select,main:has(.max-w-\[1600px\]) textarea{color:#fff;background:#101013;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:.65rem .75rem;min-width:0;max-width:100%}
+main:has(.max-w-\[1600px\]) input::placeholder,main:has(.max-w-\[1600px\]) textarea::placeholder{color:#81777b}
+main:has(.max-w-\[1600px\]) button:focus-visible,main:has(.max-w-\[1600px\]) input:focus-visible,main:has(.max-w-\[1600px\]) select:focus-visible,main:has(.max-w-\[1600px\]) textarea:focus-visible{outline:2px solid #c8102e;outline-offset:2px}
+main:has(.max-w-\[1600px\]) button[class~="bg-[#c8102e]"]{border:0;color:#fff;font-weight:700;box-shadow:0 5px 15px rgba(200,16,46,.24)}
+main:has(.max-w-\[1600px\]) button[class~="bg-[#c8102e]"]:hover{background:#a80d25}
+main:has(.max-w-\[1600px\]) article{min-width:0}
+@media(min-width:640px){[class~="sm:px-5"]{padding-left:1.25rem;padding-right:1.25rem}[class~="sm:grid-cols-3"]{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:768px){[class~="md:px-7"]{padding-left:1.75rem;padding-right:1.75rem}[class~="md:p-6"]{padding:1.5rem}[class~="md:text-3xl"]{font-size:1.875rem;line-height:1.2}[class~="md:grid-cols-2"]{grid-template-columns:repeat(2,minmax(0,1fr))}[class~="md:flex-row"]{flex-direction:row}[class~="md:flex-col"]{flex-direction:column}[class~="md:items-center"]{align-items:center}[class~="md:w-40"]{width:10rem}}
+@media(max-width:639px){[class~="grid-cols-3"]{grid-template-columns:repeat(3,minmax(0,1fr))}[class~="h-28"]{height:6rem}main:has(.max-w-\[1600px\]){padding-left:12px;padding-right:12px}}
+@media(max-width:420px){[class~="grid-cols-3"]{gap:.35rem}[class~="text-2xl"]{font-size:1.35rem}[class~="text-3xl"]{font-size:1.65rem}}
