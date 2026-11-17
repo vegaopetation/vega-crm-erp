@@ -1,4 +1,5 @@
 "use client";
+import "./exhibitions.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "../../../lib/supabase";
 import { ArrowLeft, Plus, Search, CalendarDays, MapPin, Globe, Instagram, Facebook, Linkedin, Youtube, Pencil, ExternalLink, Upload, X, Clock3, Building2, Save, Loader2 } from "lucide-react";
