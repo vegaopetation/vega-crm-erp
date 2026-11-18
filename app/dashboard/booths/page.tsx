@@ -294,6 +294,26 @@ export default function BoothManagementPage() {
         </div> : <div className="booth-empty side"><Settings2 size={27}/><b>Select a booth</b><span>Choose a booth on the floorplan to view its details, change status or create a reservation.</span></div>}
       </aside>
     </div>
+    {formOpen && <div className="booth-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="booth-modal-title" onMouseDown={e => { if (e.target === e.currentTarget) setFormOpen(false); }}>
+      <section className="booth-modal">
+        <div className="booth-panel-head"><div><div className="booth-eyebrow">BOOTH INVENTORY</div><h2 id="booth-modal-title">{selected ? "Edit booth " + selected.booth_number : "Add a new booth"}</h2><p>{selectedExhibition?.exhibition_name || "Select an exhibition"} · Enter booth details below</p></div><button className="booth-icon-btn" onClick={() => setFormOpen(false)} aria-label="Close form"><X size={18}/></button></div>
+        {!exhibitionId && <div className="booth-modal-warning">Please select an exhibition before saving a booth.</div>}
+        <div className="booth-form-grid">
+          <label>Booth number<input autoFocus value={form.booth_number || ""} onChange={e => setForm({...form,booth_number:e.target.value})} placeholder="e.g. A-01"/></label>
+          <label>Booth type<select value={form.booth_type || "Standard"} onChange={e => setForm({...form,booth_type:e.target.value})}><option>Standard</option><option>Corner</option><option>Island</option><option>Shell Scheme</option><option>Raw Space</option><option>Custom</option><option>VIP</option></select></label>
+          <label>Area (sqm)<input type="number" min="0" step="0.5" value={form.area_sqm ?? ""} onChange={e => setForm({...form,area_sqm:e.target.value})}/></label>
+          <label>Price<input type="number" min="0" step="0.01" value={form.price ?? ""} onChange={e => setForm({...form,price:e.target.value})}/></label>
+          <label>Currency<select value={form.currency || "AED"} onChange={e => setForm({...form,currency:e.target.value})}>{["AED","USD","SAR","KWD","BHD","QAR","OMR","EUR","GBP"].map(c=><option key={c}>{c}</option>)}</select></label>
+          <label>Status<select value={form.status || "Available"} onChange={e => setForm({...form,status:e.target.value})}>{statuses.map(st=><option key={st}>{st}</option>)}</select></label>
+          <label>Hall<input value={form.hall || ""} onChange={e => setForm({...form,hall:e.target.value})} placeholder="Hall 1"/></label>
+          <label>Zone<input value={form.zone || ""} onChange={e => setForm({...form,zone:e.target.value})} placeholder="Zone A"/></label>
+          <label>Width (%)<input type="number" min="5" max="60" value={form.width_percent ?? 16} onChange={e => setForm({...form,width_percent:e.target.value})}/></label>
+          <label>Height (%)<input type="number" min="5" max="60" value={form.height_percent ?? 16} onChange={e => setForm({...form,height_percent:e.target.value})}/></label>
+          <label className="wide">Notes<textarea rows={3} value={form.notes || ""} onChange={e => setForm({...form,notes:e.target.value})}/></label>
+        </div>
+        <div className="booth-form-actions"><button className="booth-secondary" onClick={() => setFormOpen(false)}>Cancel</button><button className="booth-primary" disabled={saving || !exhibitionId} onClick={saveBooth}>{saving?<Loader2 className="spin" size={15}/>:<Save size={15}/>} Save booth</button></div>
+      </section>
+    </div>}
     <footer className="booth-footer"><span>VEGA Jewellery Events And Exhibitions</span><span><Check size={14}/> Booth inventory connected to Supabase</span></footer>
   </main>;
 }
