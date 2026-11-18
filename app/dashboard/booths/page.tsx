@@ -11,8 +11,9 @@ import {
 import "./booths.css";
 
 type Exhibition = { id: string; exhibition_name: string; venue_name?: string | null; city?: string | null; start_date?: string | null; end_date?: string | null };
+type Hall = { id: string; exhibition_id: string; hall_name: string; hall_number?: string | null; floorplan_image_path?: string | null; width_meters?: number | null; height_meters?: number | null };
 type Booth = {
-  id: string; exhibition_id: string; booth_number: string; area_sqm: number;
+  id: string; exhibition_id: string; hall_id?: string | null; booth_number: string; area_sqm: number; width_meters: number; depth_meters: number;
   booth_type: string; status: string; price: number; currency: string;
   hall?: string | null; zone?: string | null; x_position: number; y_position: number;
   width_percent: number; height_percent: number; rotation_degrees: number; notes?: string | null;
@@ -30,6 +31,8 @@ export default function BoothManagementPage() {
   const [exhibitionId, setExhibitionId] = useState("");
   const [booths, setBooths] = useState<Booth[]>([]);
   const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
+  const [halls, setHalls] = useState<Hall[]>([]);
+  const [hallId, setHallId] = useState("");
   const [selected, setSelected] = useState<Booth | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,13 +40,14 @@ export default function BoothManagementPage() {
   const [query, setQuery] = useState("");
   const [layoutImage, setLayoutImage] = useState("");
   const [layoutIsPdf, setLayoutIsPdf] = useState(false);
+  const [canvasZoom, setCanvasZoom] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<any>({});
-  const [drag, setDrag] = useState<{ id: string; pointerX: number; pointerY: number; startX: number; startY: number; width: number; height: number } | null>(null);
+  const [drag, setDrag] = useState<{ id: string; mode: "move" | "resize"; edge?: string; pointerX: number; pointerY: number; startX: number; startY: number; width: number; height: number; startWidthMeters: number; startDepthMeters: number } | null>(null);
   const [bookingExhibitor, setBookingExhibitor] = useState("");
   const [bookingMode, setBookingMode] = useState<"hold" | "book">("hold");
 
-  const load = useCallback(async (id?: string) => {
+  const load = useCallback(async (id?: string, selectedHallId?: string) => {
     setLoading(true); setMessage("");
     try {
       const { data: eventRows, error: eventError } = await supabase
@@ -55,8 +59,13 @@ export default function BoothManagementPage() {
       const activeId = id || exhibitionId || events[0]?.id || "";
       if (!activeId) { setBooths([]); setExhibitionId(""); setLoading(false); return; }
       setExhibitionId(activeId);
+      const { data: hallRows, error: hallError } = await supabase.from("exhibition_halls").select("*").eq("exhibition_id", activeId).order("sort_order").order("hall_name");
+      if (hallError) throw hallError;
+      const hallList = (hallRows || []) as Hall[]; setHalls(hallList);
+      const activeHall = selectedHallId === "" ? null : (hallList.find(h => h.id === (selectedHallId || hallId)) || hallList[0] || null);
+      setHallId(activeHall?.id || "");
       const [{ data: boothRows, error: boothError }, { data: exhibitorRows, error: exhibitorError }, { data: event }] = await Promise.all([
-        supabase.from("booths").select("*").eq("exhibition_id", activeId).order("sort_order").order("booth_number"),
+        (activeHall ? supabase.from("booths").select("*").eq("exhibition_id", activeId).eq("hall_id", activeHall.id) : supabase.from("booths").select("*").eq("exhibition_id", activeId)).order("sort_order").order("booth_number"),
         supabase.from("exhibitors").select("id,company_name,contact_person").eq("exhibition_id", activeId).order("company_name"),
         supabase.from("exhibitions").select("floorplan_image_path").eq("id", activeId).maybeSingle()
       ]);
@@ -65,10 +74,11 @@ export default function BoothManagementPage() {
       setBooths((boothRows || []) as Booth[]);
       setExhibitors((exhibitorRows || []) as Exhibitor[]);
       setSelected(null);
-      if (event?.floorplan_image_path) {
-        const { data: signed } = await supabase.storage.from("booth-floorplans").createSignedUrl(event.floorplan_image_path, 3600);
+      const floorplanPath = activeHall?.floorplan_image_path || event?.floorplan_image_path;
+      if (floorplanPath) {
+        const { data: signed } = await supabase.storage.from("booth-floorplans").createSignedUrl(floorplanPath, 3600);
         setLayoutImage(signed?.signedUrl || "");
-        setLayoutIsPdf(event.floorplan_image_path.toLowerCase().endsWith(".pdf"));
+        setLayoutIsPdf(floorplanPath.toLowerCase().endsWith(".pdf"));
       } else { setLayoutImage(""); setLayoutIsPdf(false); }
       // Expire timed holds when this exhibition workspace is opened.
       const { data: expired } = await supabase.from("booth_bookings").select("id,booth_id")
@@ -76,13 +86,14 @@ export default function BoothManagementPage() {
       if (expired?.length) {
         await supabase.from("booth_bookings").update({ status: "Expired" }).in("id", expired.map((b: any) => b.id));
         await supabase.from("booths").update({ status: "Available" }).in("id", expired.map((b: any) => b.booth_id)).eq("status", "Reserved");
-        const { data: refreshed } = await supabase.from("booths").select("*").eq("exhibition_id", activeId).order("sort_order").order("booth_number");
+        const refreshQuery = supabase.from("booths").select("*").eq("exhibition_id", activeId);
+        const { data: refreshed } = await (activeHall ? refreshQuery.eq("hall_id", activeHall.id) : refreshQuery).order("sort_order").order("booth_number");
         if (refreshed) setBooths(refreshed as Booth[]);
       }
     } catch (error: any) {
       setMessage(error?.message || "Could not load booth data. Check your connection and permissions.");
     } finally { setLoading(false); }
-  }, [supabase, exhibitionId]);
+  }, [supabase, exhibitionId, hallId]);
 
   useEffect(() => { load(); }, []); // initial workspace load
 
@@ -97,7 +108,8 @@ export default function BoothManagementPage() {
   const selectedExhibition = exhibitions.find(e => e.id === exhibitionId);
 
   function startNew() {
-    setForm({ booth_number: "", area_sqm: "12", booth_type: "Standard", status: "Available", price: "0", currency: "AED", hall: "", zone: "", x_position: 8 + (booths.length % 4) * 19, y_position: 8 + (Math.floor(booths.length / 4) % 4) * 21, width_percent: 16, height_percent: 16, notes: "" });
+    setSelected(null);
+    setForm({ booth_number: "", area_sqm: "12", width_meters: "3", depth_meters: "4", booth_type: "Standard", status: "Available", price: "0", currency: "USD", hall_id: hallId, hall: "", zone: "", x_position: 8 + (booths.length % 4) * 19, y_position: 8 + (Math.floor(booths.length / 4) % 4) * 21, width_percent: 16, height_percent: 16, notes: "" });
     setFormOpen(true);
   }
   function editBooth(booth: Booth) {
@@ -112,8 +124,8 @@ export default function BoothManagementPage() {
     const payload = {
       exhibition_id: exhibitionId, booth_number: String(form.booth_number).trim(),
       area_sqm: Number(form.area_sqm || 0), booth_type: form.booth_type || "Standard",
-      status: form.status || "Available", price: Number(form.price || 0), currency: form.currency || "AED",
-      hall: form.hall || null, zone: form.zone || null, x_position: Number(form.x_position || 0),
+      status: form.status || "Available", price: Number(form.price || 0), currency: form.currency || "USD",
+      hall_id: form.hall_id || hallId || null, hall: halls.find(h => h.id === (form.hall_id || hallId))?.hall_name || form.hall || null, zone: form.zone || null, width_meters: Number(form.width_meters || 3), depth_meters: Number(form.depth_meters || 4), x_position: Number(form.x_position || 0),
       y_position: Number(form.y_position || 0), width_percent: Number(form.width_percent || 16),
       height_percent: Number(form.height_percent || 16), rotation_degrees: Number(form.rotation_degrees || 0),
       notes: form.notes || null, updated_at: new Date().toISOString()
@@ -134,16 +146,25 @@ export default function BoothManagementPage() {
     const rect = canvasRef.current.getBoundingClientRect();
     const dx = ((event.clientX - drag.pointerX) / rect.width) * 100;
     const dy = ((event.clientY - drag.pointerY) / rect.height) * 100;
-    const x = Math.max(0, Math.min(100 - drag.width, drag.startX + dx));
-    const y = Math.max(0, Math.min(100 - drag.height, drag.startY + dy));
-    setBooths(prev => prev.map(b => b.id === drag.id ? { ...b, x_position: x, y_position: y } : b));
+    setBooths(prev => prev.map(b => {
+      if (b.id !== drag.id) return b;
+      if (drag.mode === "move") return { ...b, x_position: Math.max(0, Math.min(100 - drag.width, drag.startX + dx)), y_position: Math.max(0, Math.min(100 - drag.height, drag.startY + dy)) };
+      const edge = drag.edge || ""; let x = drag.startX, y = drag.startY, w = drag.width, h = drag.height;
+      if (edge.includes("e")) w = Math.max(3, Math.min(100 - x, drag.width + dx));
+      if (edge.includes("s")) h = Math.max(3, Math.min(100 - y, drag.height + dy));
+      if (edge.includes("w")) { const nw = Math.max(3, drag.width - dx); x = Math.max(0, drag.startX + drag.width - nw); w = nw; }
+      if (edge.includes("n")) { const nh = Math.max(3, drag.height - dy); y = Math.max(0, drag.startY + drag.height - nh); h = nh; }
+      const widthMeters = Number(((w / drag.width) * (drag.startWidthMeters || b.width_meters || 3)).toFixed(2));
+      const depthMeters = Number(((h / drag.height) * (drag.startDepthMeters || b.depth_meters || 4)).toFixed(2));
+      return { ...b, x_position:x, y_position:y, width_percent:w, height_percent:h, width_meters:widthMeters, depth_meters:depthMeters, area_sqm:Number((widthMeters*depthMeters).toFixed(2)) };
+    }));
   }
   async function finishDrag() {
     if (!drag) return;
     const booth = booths.find(b => b.id === drag.id);
     setDrag(null);
     if (!booth) return;
-    const { error } = await supabase.from("booths").update({ x_position: booth.x_position, y_position: booth.y_position, updated_at: new Date().toISOString() }).eq("id", booth.id);
+    const { error } = await supabase.from("booths").update({ x_position: booth.x_position, y_position: booth.y_position, width_percent: booth.width_percent, height_percent: booth.height_percent, width_meters: booth.width_meters, depth_meters: booth.depth_meters, area_sqm: Number(booth.width_meters || 0) * Number(booth.depth_meters || 0), updated_at: new Date().toISOString() }).eq("id", booth.id);
     if (error) setMessage("Could not save booth position: " + error.message);
   }
   function beginDrag(event: React.PointerEvent<HTMLButtonElement>, booth: Booth) {
@@ -152,7 +173,12 @@ export default function BoothManagementPage() {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     setSelected(booth);
-    setDrag({ id: booth.id, pointerX: event.clientX, pointerY: event.clientY, startX: booth.x_position || 0, startY: booth.y_position || 0, width: booth.width_percent || 16, height: booth.height_percent || 16 });
+    setDrag({ id: booth.id, mode: "move", pointerX: event.clientX, pointerY: event.clientY, startX: booth.x_position || 0, startY: booth.y_position || 0, width: booth.width_percent || 16, height: booth.height_percent || 16, startWidthMeters: booth.width_meters || 3, startDepthMeters: booth.depth_meters || 4 });
+  }
+
+  function beginResize(event: React.PointerEvent<HTMLSpanElement>, booth: Booth, edge: string) {
+    event.preventDefault(); event.stopPropagation(); setSelected(booth);
+    setDrag({ id: booth.id, mode: "resize", edge, pointerX: event.clientX, pointerY: event.clientY, startX: booth.x_position || 0, startY: booth.y_position || 0, width: booth.width_percent || 16, height: booth.height_percent || 16, startWidthMeters: booth.width_meters || 3, startDepthMeters: booth.depth_meters || 4 });
   }
 
   async function uploadFloorplan(file?: File) {
@@ -161,10 +187,12 @@ export default function BoothManagementPage() {
     if (file.size > 15 * 1024 * 1024) { setMessage("Floorplan file must be 15 MB or smaller."); return; }
     setSaving(true);
     try {
-      const path = exhibitionId + "/" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = exhibitionId + "/" + (hallId || "project") + "/" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const { error: uploadError } = await supabase.storage.from("booth-floorplans").upload(path, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
-      const { error: updateError } = await supabase.from("exhibitions").update({ floorplan_image_path: path }).eq("id", exhibitionId);
+      const { error: updateError } = hallId
+        ? await supabase.from("exhibition_halls").update({ floorplan_image_path: path, updated_at: new Date().toISOString() }).eq("id", hallId)
+        : await supabase.from("exhibitions").update({ floorplan_image_path: path }).eq("id", exhibitionId);
       if (updateError) throw updateError;
       const { data } = await supabase.storage.from("booth-floorplans").createSignedUrl(path, 3600);
       setLayoutImage(data?.signedUrl || ""); setLayoutIsPdf(file.type === "application/pdf"); setMessage("Venue drawing uploaded. Booths can now be positioned over it.");
@@ -188,7 +216,7 @@ export default function BoothManagementPage() {
         const expiry = hold ? new Date(Date.now() + 30 * 60 * 1000).toISOString() : null;
         const { error } = await supabase.from("booth_bookings").insert({
           booth_id: selected.id, exhibitor_id: bookingExhibitor, booking_date: new Date().toISOString().slice(0, 10),
-          status: hold ? "Reserved" : "Booked", total_amount: selected.price || 0, currency: selected.currency || "AED",
+          status: hold ? "Reserved" : "Booked", total_amount: selected.price || 0, currency: selected.currency || "USD",
           hold_expires_at: expiry, approved_at: hold ? null : new Date().toISOString()
         });
         if (error) throw error;
@@ -236,6 +264,8 @@ export default function BoothManagementPage() {
     </section>
     <section className="booth-toolbar">
       <label className="booth-event-select"><Building2 size={18}/><select value={exhibitionId} onChange={e => load(e.target.value)}><option value="">Select exhibition</option>{exhibitions.map(e => <option key={e.id} value={e.id}>{e.exhibition_name}</option>)}</select><ChevronDown size={15}/></label>
+      {halls.length > 0 && <label className="booth-event-select"><Building2 size={16}/><select value={hallId} onChange={e => { setHallId(e.target.value); load(exhibitionId,e.target.value); }}><option value="">All halls</option>{halls.map(h=><option key={h.id} value={h.id}>{h.hall_name}</option>)}</select></label>}
+      <button className="booth-secondary" onClick={() => location.href="/dashboard/halls"}>Manage halls</button>
       <label className="booth-search"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search booth, hall or zone"/></label>
       <button className="booth-secondary" onClick={() => load()}><RefreshCw size={15}/> Refresh</button>
       <label className="booth-secondary booth-upload"><Upload size={15}/> Upload venue drawing<input type="file" accept=".png,.jpg,.jpeg,.webp,.pdf" onChange={e => uploadFloorplan(e.target.files?.[0])}/></label>
@@ -246,15 +276,15 @@ export default function BoothManagementPage() {
     </section>
     <div className="booth-workspace">
       <section className="booth-layout-panel">
-        <div className="booth-panel-head"><div><h2>Interactive floorplan</h2><p>{selectedExhibition ? [selectedExhibition.venue_name,selectedExhibition.city].filter(Boolean).join(" · ") : "Select an exhibition to view its layout"}</p></div><span className="booth-count">{filtered.length} booths</span></div>
+        <div className="booth-panel-head"><div><h2>Interactive floorplan</h2><p>{selectedExhibition ? [selectedExhibition.venue_name,selectedExhibition.city].filter(Boolean).join(" · ") : "Select an exhibition to view its layout"}</p></div><span className="booth-count">{filtered.length} booths</span><div className="booth-zoom-controls"><button onClick={()=>setCanvasZoom(z=>Math.max(.5,Number((z-.1).toFixed(1))))}>−</button><span>{Math.round(canvasZoom*100)}%</span><button onClick={()=>setCanvasZoom(z=>Math.min(2,Number((z+.1).toFixed(1))))}>+</button><button onClick={()=>setCanvasZoom(1)}>Fit</button></div></div>
         <div className="booth-legend">{statuses.map(s => <span key={s}><i className={statusClass(s)}/>{s}</span>)}</div>
         {loading ? <div className="booth-empty"><Loader2 className="spin" size={25}/>Loading exhibition layout…</div> :
           !exhibitionId ? <div className="booth-empty"><Building2 size={30}/><b>No exhibition selected</b><span>Create an exhibition first, then add booths to its floorplan.</span></div> :
-          <div ref={canvasRef} className={"booth-canvas " + (!layoutImage ? "no-image" : "")} onPointerMove={onCanvasPointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} style={layoutImage && !layoutIsPdf ? { backgroundImage: "linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.18)),url('" + layoutImage + "')" } : undefined}>
+          <div ref={canvasRef} className={"booth-canvas " + (!layoutImage ? "no-image" : "")} onPointerMove={onCanvasPointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} style={{ ...(layoutImage && !layoutIsPdf ? { backgroundImage: "linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.18)),url('" + layoutImage + "')" } : {}), zoom: canvasZoom }}>
             {!layoutImage && <div className="booth-canvas-grid"/>}
             {layoutImage && layoutIsPdf && <iframe className="booth-pdf-underlay" src={layoutImage + "#toolbar=0&navpanes=0"} title="Venue floorplan PDF" />}
             {filtered.map(booth => <button key={booth.id} className={"booth-tile " + statusClass(booth.status) + (selected?.id === booth.id ? " selected" : "")} style={{ left: (booth.x_position ?? 8) + "%", top: (booth.y_position ?? 8) + "%", width: (booth.width_percent ?? 16) + "%", height: (booth.height_percent ?? 16) + "%", transform: "rotate(" + (booth.rotation_degrees || 0) + "deg)" }} onPointerDown={e => beginDrag(e, booth)} onClick={() => setSelected(booth)} title="Drag to reposition; click to inspect">
-              <Grip size={12}/><b>{booth.booth_number}</b><span>{booth.area_sqm || 0} sqm</span>
+              <Grip size={12}/><b>{booth.booth_number}</b><span>{booth.width_meters || 3}m × {booth.depth_meters || 4}m</span>{selected?.id===booth.id && ["nw","n","ne","e","se","s","sw","w"].map(edge=><span key={edge} className={"booth-resize-handle "+edge} onPointerDown={e=>beginResize(e,booth,edge)} title="Drag to resize"/>) }
             </button>)}
             {!filtered.length && <div className="booth-canvas-empty"><Building2 size={30}/><b>No booths in this exhibition yet</b><span>Add booths to start designing the floorplan.</span><button className="booth-primary" onClick={startNew}><Plus size={15}/> Add first booth</button></div>}
           </div>}
@@ -268,12 +298,14 @@ export default function BoothManagementPage() {
             <label>Booth type<select value={form.booth_type || "Standard"} onChange={e => setForm({...form,booth_type:e.target.value})}><option>Standard</option><option>Corner</option><option>Island</option><option>Shell Scheme</option><option>Raw Space</option><option>Custom</option><option>VIP</option></select></label>
             <label>Area (sqm)<input type="number" min="0" step="0.5" value={form.area_sqm ?? ""} onChange={e => setForm({...form,area_sqm:e.target.value})}/></label>
             <label>Price<input type="number" min="0" step="0.01" value={form.price ?? ""} onChange={e => setForm({...form,price:e.target.value})}/></label>
-            <label>Currency<select value={form.currency || "AED"} onChange={e => setForm({...form,currency:e.target.value})}>{["AED","USD","SAR","KWD","BHD","QAR","OMR","EUR","GBP"].map(c=><option key={c}>{c}</option>)}</select></label>
+            <label>Currency<select value={form.currency || "USD"} onChange={e => setForm({...form,currency:e.target.value})}>{["USD","AED","SAR","KWD","BHD","QAR","OMR","EUR","GBP"].map(c=><option key={c}>{c}</option>)}</select></label>
             <label>Status<select value={form.status || "Available"} onChange={e => setForm({...form,status:e.target.value})}>{statuses.map(s=><option key={s}>{s}</option>)}</select></label>
-            <label>Hall<input value={form.hall || ""} onChange={e => setForm({...form,hall:e.target.value})} placeholder="Hall 1"/></label>
+            <label>Hall<select value={form.hall_id || hallId || ""} onChange={e => setForm({...form,hall_id:e.target.value})}><option value="">Unassigned</option>{halls.map(h=><option key={h.id} value={h.id}>{h.hall_name}</option>)}</select></label>
             <label>Zone<input value={form.zone || ""} onChange={e => setForm({...form,zone:e.target.value})} placeholder="Zone A"/></label>
-            <label>Width (%)<input type="number" min="5" max="60" value={form.width_percent ?? 16} onChange={e => setForm({...form,width_percent:e.target.value})}/></label>
-            <label>Height (%)<input type="number" min="5" max="60" value={form.height_percent ?? 16} onChange={e => setForm({...form,height_percent:e.target.value})}/></label>
+            <label>Width (%)<input type="number" min="3" max="100" value={form.width_percent ?? 16} onChange={e => setForm({...form,width_percent:e.target.value})}/></label>
+            <label>Width (metres)<input type="number" min="0.1" step="0.1" value={form.width_meters ?? 3} onChange={e => setForm({...form,width_meters:e.target.value})}/></label>
+            <label>Depth (metres)<input type="number" min="0.1" step="0.1" value={form.depth_meters ?? 4} onChange={e => setForm({...form,depth_meters:e.target.value})}/></label>
+            <label>Height (%)<input type="number" min="3" max="100" value={form.height_percent ?? 16} onChange={e => setForm({...form,height_percent:e.target.value})}/></label>
             <label className="wide">Notes<textarea rows={3} value={form.notes || ""} onChange={e => setForm({...form,notes:e.target.value})}/></label>
           </div>
           <div className="booth-form-actions"><button className="booth-secondary" onClick={() => setFormOpen(false)}>Cancel</button><button className="booth-primary" disabled={saving} onClick={saveBooth}>{saving?<Loader2 className="spin" size={15}/>:<Save size={15}/>} Save booth</button></div>
@@ -281,7 +313,7 @@ export default function BoothManagementPage() {
         </div> : selected ? <div className="booth-details">
           <div className="booth-panel-head"><div><h2>Booth {selected.booth_number}</h2><p>{selected.hall || "Hall not set"}{selected.zone ? " · " + selected.zone : ""}</p></div><button className="booth-icon-btn" onClick={() => setSelected(null)}><X size={17}/></button></div>
           <div className={"booth-status-pill " + statusClass(selected.status)}>{selected.status}</div>
-          <div className="booth-detail-grid"><div><span>Area</span><b>{selected.area_sqm} sqm</b></div><div><span>Booth type</span><b>{selected.booth_type}</b></div><div><span>Price</span><b>{selected.price} {selected.currency}</b></div><div><span>Location</span><b>{selected.hall || "—"} / {selected.zone || "—"}</b></div></div>
+          <div className="booth-detail-grid"><div><span>Dimensions</span><b>{selected.width_meters || 3}m × {selected.depth_meters || 4}m</b></div><div><span>Area</span><b>{selected.area_sqm} sqm</b></div><div><span>Booth type</span><b>{selected.booth_type}</b></div><div><span>Price</span><b>{selected.price} {selected.currency}</b></div><div><span>Location</span><b>{selected.hall || "—"} / {selected.zone || "—"}</b></div></div>
           <button className="booth-secondary full" onClick={() => editBooth(selected)}><Settings2 size={15}/> Edit booth details</button>
           <div className="booth-divider"/>
           <h3>Reservation & booking</h3>
@@ -305,10 +337,12 @@ export default function BoothManagementPage() {
           <label>Price<input type="number" min="0" step="0.01" value={form.price ?? ""} onChange={e => setForm({...form,price:e.target.value})}/></label>
           <label>Currency<select value={form.currency || "AED"} onChange={e => setForm({...form,currency:e.target.value})}>{["AED","USD","SAR","KWD","BHD","QAR","OMR","EUR","GBP"].map(c=><option key={c}>{c}</option>)}</select></label>
           <label>Status<select value={form.status || "Available"} onChange={e => setForm({...form,status:e.target.value})}>{statuses.map(st=><option key={st}>{st}</option>)}</select></label>
-          <label>Hall<input value={form.hall || ""} onChange={e => setForm({...form,hall:e.target.value})} placeholder="Hall 1"/></label>
+          <label>Hall<select value={form.hall_id || hallId || ""} onChange={e => setForm({...form,hall_id:e.target.value})}><option value="">Unassigned</option>{halls.map(h=><option key={h.id} value={h.id}>{h.hall_name}</option>)}</select></label>
           <label>Zone<input value={form.zone || ""} onChange={e => setForm({...form,zone:e.target.value})} placeholder="Zone A"/></label>
-          <label>Width (%)<input type="number" min="5" max="60" value={form.width_percent ?? 16} onChange={e => setForm({...form,width_percent:e.target.value})}/></label>
-          <label>Height (%)<input type="number" min="5" max="60" value={form.height_percent ?? 16} onChange={e => setForm({...form,height_percent:e.target.value})}/></label>
+          <label>Width (%)<input type="number" min="3" max="100" value={form.width_percent ?? 16} onChange={e => setForm({...form,width_percent:e.target.value})}/></label>
+          <label>Width (metres)<input type="number" min="0.1" step="0.1" value={form.width_meters ?? 3} onChange={e => setForm({...form,width_meters:e.target.value})}/></label>
+          <label>Depth (metres)<input type="number" min="0.1" step="0.1" value={form.depth_meters ?? 4} onChange={e => setForm({...form,depth_meters:e.target.value})}/></label>
+          <label>Height (%)<input type="number" min="3" max="100" value={form.height_percent ?? 16} onChange={e => setForm({...form,height_percent:e.target.value})}/></label>
           <label className="wide">Notes<textarea rows={3} value={form.notes || ""} onChange={e => setForm({...form,notes:e.target.value})}/></label>
         </div>
         <div className="booth-form-actions"><button className="booth-secondary" onClick={() => setFormOpen(false)}>Cancel</button><button className="booth-primary" disabled={saving || !exhibitionId} onClick={saveBooth}>{saving?<Loader2 className="spin" size={15}/>:<Save size={15}/>} Save booth</button></div>
