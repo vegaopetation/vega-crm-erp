@@ -36,6 +36,7 @@ export default function BoothManagementPage() {
   const [message, setMessage] = useState("");
   const [query, setQuery] = useState("");
   const [layoutImage, setLayoutImage] = useState("");
+  const [layoutIsPdf, setLayoutIsPdf] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<any>({});
   const [drag, setDrag] = useState<{ id: string; pointerX: number; pointerY: number; startX: number; startY: number; width: number; height: number } | null>(null);
@@ -67,7 +68,8 @@ export default function BoothManagementPage() {
       if (event?.floorplan_image_path) {
         const { data: signed } = await supabase.storage.from("booth-floorplans").createSignedUrl(event.floorplan_image_path, 3600);
         setLayoutImage(signed?.signedUrl || "");
-      } else setLayoutImage("");
+        setLayoutIsPdf(event.floorplan_image_path.toLowerCase().endsWith(".pdf"));
+      } else { setLayoutImage(""); setLayoutIsPdf(false); }
       // Expire timed holds when this exhibition workspace is opened.
       const { data: expired } = await supabase.from("booth_bookings").select("id,booth_id")
         .eq("status", "Reserved").not("hold_expires_at", "is", null).lt("hold_expires_at", new Date().toISOString());
@@ -165,7 +167,7 @@ export default function BoothManagementPage() {
       const { error: updateError } = await supabase.from("exhibitions").update({ floorplan_image_path: path }).eq("id", exhibitionId);
       if (updateError) throw updateError;
       const { data } = await supabase.storage.from("booth-floorplans").createSignedUrl(path, 3600);
-      setLayoutImage(data?.signedUrl || ""); setMessage("Venue drawing uploaded. Booths can now be positioned over it.");
+      setLayoutImage(data?.signedUrl || ""); setLayoutIsPdf(file.type === "application/pdf"); setMessage("Venue drawing uploaded. Booths can now be positioned over it.");
     } catch (error: any) { setMessage(error?.message || "Floorplan upload failed."); }
     finally { setSaving(false); }
   }
@@ -176,13 +178,21 @@ export default function BoothManagementPage() {
     setSaving(true); setMessage("");
     try {
       const hold = bookingMode === "hold";
-      const expiry = hold ? new Date(Date.now() + 30 * 60 * 1000).toISOString() : null;
-      const { error } = await supabase.from("booth_bookings").insert({
-        booth_id: selected.id, exhibitor_id: bookingExhibitor, booking_date: new Date().toISOString().slice(0, 10),
-        status: hold ? "Reserved" : "Booked", total_amount: selected.price || 0, currency: selected.currency || "AED",
-        hold_expires_at: expiry, approved_at: hold ? null : new Date().toISOString()
-      });
-      if (error) throw error;
+      if (hold && selected.status !== "Available") throw new Error("Only available booths can be placed on hold.");
+      if (!hold && selected.status === "Reserved") {
+        const { error } = await supabase.from("booth_bookings").update({
+          exhibitor_id: bookingExhibitor, status: "Booked", hold_expires_at: null, approved_at: new Date().toISOString()
+        }).eq("booth_id", selected.id).eq("status", "Reserved");
+        if (error) throw error;
+      } else {
+        const expiry = hold ? new Date(Date.now() + 30 * 60 * 1000).toISOString() : null;
+        const { error } = await supabase.from("booth_bookings").insert({
+          booth_id: selected.id, exhibitor_id: bookingExhibitor, booking_date: new Date().toISOString().slice(0, 10),
+          status: hold ? "Reserved" : "Booked", total_amount: selected.price || 0, currency: selected.currency || "AED",
+          hold_expires_at: expiry, approved_at: hold ? null : new Date().toISOString()
+        });
+        if (error) throw error;
+      }
       const { error: boothError } = await supabase.from("booths").update({ status: hold ? "Reserved" : "Booked" }).eq("id", selected.id);
       if (boothError) throw boothError;
       setBookingExhibitor(""); setMessage(hold ? "30-minute booth hold created." : "Booth booking confirmed.");
@@ -234,8 +244,9 @@ export default function BoothManagementPage() {
         <div className="booth-legend">{statuses.map(s => <span key={s}><i className={statusClass(s)}/>{s}</span>)}</div>
         {loading ? <div className="booth-empty"><Loader2 className="spin" size={25}/>Loading exhibition layout…</div> :
           !exhibitionId ? <div className="booth-empty"><Building2 size={30}/><b>No exhibition selected</b><span>Create an exhibition first, then add booths to its floorplan.</span></div> :
-          <div ref={canvasRef} className={"booth-canvas " + (!layoutImage ? "no-image" : "")} onPointerMove={onCanvasPointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} style={layoutImage ? { backgroundImage: "linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.18)),url('" + layoutImage + "')" } : undefined}>
+          <div ref={canvasRef} className={"booth-canvas " + (!layoutImage ? "no-image" : "")} onPointerMove={onCanvasPointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} style={layoutImage && !layoutIsPdf ? { backgroundImage: "linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.18)),url('" + layoutImage + "')" } : undefined}>
             {!layoutImage && <div className="booth-canvas-grid"/>}
+            {layoutImage && layoutIsPdf && <iframe className="booth-pdf-underlay" src={layoutImage + "#toolbar=0&navpanes=0"} title="Venue floorplan PDF" />}
             {filtered.map(booth => <button key={booth.id} className={"booth-tile " + statusClass(booth.status) + (selected?.id === booth.id ? " selected" : "")} style={{ left: (booth.x_position ?? 8) + "%", top: (booth.y_position ?? 8) + "%", width: (booth.width_percent ?? 16) + "%", height: (booth.height_percent ?? 16) + "%", transform: "rotate(" + (booth.rotation_degrees || 0) + "deg)" }} onPointerDown={e => beginDrag(e, booth)} onClick={() => setSelected(booth)} title="Drag to reposition; click to inspect">
               <Grip size={12}/><b>{booth.booth_number}</b><span>{booth.area_sqm || 0} sqm</span>
             </button>)}
@@ -270,7 +281,7 @@ export default function BoothManagementPage() {
           <h3>Reservation & booking</h3>
           <label className="booth-field-label">Exhibitor<select value={bookingExhibitor} onChange={e => setBookingExhibitor(e.target.value)}><option value="">Select exhibitor</option>{exhibitors.map(e=><option key={e.id} value={e.id}>{e.company_name}</option>)}</select></label>
           <div className="booth-booking-mode"><button className={bookingMode==="hold"?"active":""} onClick={()=>setBookingMode("hold")}>30-minute hold</button><button className={bookingMode==="book"?"active":""} onClick={()=>setBookingMode("book")}>Confirm booking</button></div>
-          <button className="booth-primary full" disabled={saving || !["Available","Reserved"].includes(selected.status)} onClick={createBooking}><CalendarDays size={15}/>{bookingMode==="hold"?"Reserve for 30 minutes":"Confirm booth booking"}</button>
+          <button className="booth-primary full" disabled={saving || !(selected.status === "Available" || (selected.status === "Reserved" && bookingMode === "book"))} onClick={createBooking}><CalendarDays size={15}/>{bookingMode==="hold"?"Reserve for 30 minutes":"Confirm booth booking"}</button>
           <div className="booth-divider"/>
           <h3>Quick status</h3>
           <div className="booth-status-actions">{statuses.map(s=><button key={s} className={selected.status===s?"active":""} onClick={()=>changeStatus(s)}>{s}</button>)}</div>
