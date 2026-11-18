@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../../lib/supabase";
 import {
-  ArrowLeft, Building2, CalendarDays, Check, ChevronDown, CircleDollarSign,
-  Grip, ImagePlus, Loader2, MapPin, Plus, RefreshCw, Save, Search,
+  ArrowLeft, Building2, CalendarDays, Check, ChevronDown,
+  Grip, Loader2, MapPin, Plus, Printer, RefreshCw, Save, Search,
   Settings2, Trash2, Upload, X
 } from "lucide-react";
 import "./booths.css";
@@ -40,7 +40,9 @@ export default function BoothManagementPage() {
   const [query, setQuery] = useState("");
   const [layoutImage, setLayoutImage] = useState("");
   const [layoutIsPdf, setLayoutIsPdf] = useState(false);
-  const [canvasZoom, setCanvasZoom] = useState(1);
+  const [floorplanZoom, setFloorplanZoom] = useState(1);
+  const [floorplanOpacity, setFloorplanOpacity] = useState(0.82);
+  const [boothPickerOpen, setBoothPickerOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<any>({});
   const [drag, setDrag] = useState<{ id: string; mode: "move" | "resize"; edge?: string; pointerX: number; pointerY: number; startX: number; startY: number; width: number; height: number; startWidthMeters: number; startDepthMeters: number } | null>(null);
@@ -170,6 +172,7 @@ export default function BoothManagementPage() {
   function beginDrag(event: React.PointerEvent<HTMLButtonElement>, booth: Booth) {
     if (event.button !== 0) return;
     event.preventDefault(); event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     setSelected(booth);
@@ -177,7 +180,7 @@ export default function BoothManagementPage() {
   }
 
   function beginResize(event: React.PointerEvent<HTMLSpanElement>, booth: Booth, edge: string) {
-    event.preventDefault(); event.stopPropagation(); setSelected(booth);
+    event.preventDefault(); event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); setSelected(booth);
     setDrag({ id: booth.id, mode: "resize", edge, pointerX: event.clientX, pointerY: event.clientY, startX: booth.x_position || 0, startY: booth.y_position || 0, width: booth.width_percent || 16, height: booth.height_percent || 16, startWidthMeters: booth.width_meters || 3, startDepthMeters: booth.depth_meters || 4 });
   }
 
@@ -198,6 +201,18 @@ export default function BoothManagementPage() {
       setLayoutImage(data?.signedUrl || ""); setLayoutIsPdf(file.type === "application/pdf"); setMessage("Venue drawing uploaded. Booths can now be positioned over it.");
     } catch (error: any) { setMessage(error?.message || "Floorplan upload failed."); }
     finally { setSaving(false); }
+  }
+
+  function printFloorplan(includeBackground: boolean) {
+    const win = window.open("", "_blank", "width=1200,height=900");
+    if (!win) { setMessage("Please allow pop-ups to print or save the floorplan."); return; }
+    const boothMarkup = filtered.map(b => {
+      const key = statusClass(b.status);
+      return '<div class="booth ' + key + '" style="left:' + (b.x_position ?? 8) + '%;top:' + (b.y_position ?? 8) + '%;width:' + (b.width_percent ?? 16) + '%;height:' + (b.height_percent ?? 16) + '%"><b>' + String(b.booth_number).replace(/[&<>"]/g, "") + '</b><small>' + (b.width_meters || 3) + 'm × ' + (b.depth_meters || 4) + 'm</small></div>';
+    }).join("");
+    const background = includeBackground && layoutImage ? (layoutIsPdf ? '<iframe class="floorplan" src="' + layoutImage + '#toolbar=0&navpanes=0"></iframe>' : '<div class="floorplan" style="background-image:url(&quot;' + layoutImage + '&quot;);opacity:' + floorplanOpacity + ';transform:scale(' + floorplanZoom + ')"></div>') : "";
+    win.document.write('<!doctype html><html><head><title>VEGA Booth Floorplan</title><style>@page{size:landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;color:#222}.heading{display:flex;justify-content:space-between;align-items:center;margin:0 0 10px}.heading h1{font-size:18px;margin:0}.heading p{font-size:10px;color:#666;margin:4px 0}.canvas{height:calc(100vh - 70px);min-height:500px;position:relative;overflow:hidden;border:1px solid #bbb;background:#fff;background-size:contain;background-position:center;background-repeat:no-repeat}.floorplan{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background-size:contain;background-position:center;background-repeat:no-repeat;pointer-events:none}.booth{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid;border-radius:5px;background:#fffD;font-size:11px;text-align:center;padding:2px;overflow:hidden}.available{background:#d4ecdd;color:#174f34;border-color:#24734b}.reserved{background:#f3dfb5;color:#6f4707;border-color:#94600d}.booked{background:#f3cfd1;color:#861a20;border-color:#a51e26}.blocked{background:#d9d9dd;color:#414249;border-color:#555760}.booth small{font-size:8px}@media print{.canvas{height:calc(100vh - 70px)}}</style></head><body><div class="heading"><div><h1>VEGA Jewellery Events And Exhibitions — Booth Floorplan</h1><p>' + (selectedExhibition?.exhibition_name || "Exhibition") + (hallId ? " · " + (halls.find(h => h.id === hallId)?.hall_name || "") : "") + '</p></div><p>' + (includeBackground ? "With uploaded floorplan" : "Booths only") + '</p></div><div class="canvas">' + background + boothMarkup + '</div><script>window.onload=()=>setTimeout(()=>window.print(),500)</script></body></html>');
+    win.document.close();
   }
 
   async function createBooking() {
@@ -264,7 +279,7 @@ export default function BoothManagementPage() {
     </section>
     <section className="booth-toolbar">
       <label className="booth-event-select"><Building2 size={18}/><select value={exhibitionId} onChange={e => load(e.target.value)}><option value="">Select exhibition</option>{exhibitions.map(e => <option key={e.id} value={e.id}>{e.exhibition_name}</option>)}</select><ChevronDown size={15}/></label>
-      {halls.length > 0 && <label className="booth-event-select"><Building2 size={16}/><select value={hallId} onChange={e => { setHallId(e.target.value); load(exhibitionId,e.target.value); }}><option value="">All halls</option>{halls.map(h=><option key={h.id} value={h.id}>{h.hall_name}</option>)}</select></label>}
+      {exhibitionId && <label className="booth-event-select"><Building2 size={16}/><select value={hallId} onChange={e => load(exhibitionId,e.target.value)}><option value="">Select hall / All halls</option>{halls.map(h=><option key={h.id} value={h.id}>{h.hall_name}</option>)}</select></label>}
       <button className="booth-secondary" onClick={() => location.href="/dashboard/halls"}>Manage halls</button>
       <label className="booth-search"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search booth, hall or zone"/></label>
       <button className="booth-secondary" onClick={() => load()}><RefreshCw size={15}/> Refresh</button>
@@ -276,13 +291,13 @@ export default function BoothManagementPage() {
     </section>
     <div className="booth-workspace">
       <section className="booth-layout-panel">
-        <div className="booth-panel-head"><div><h2>Interactive floorplan</h2><p>{selectedExhibition ? [selectedExhibition.venue_name,selectedExhibition.city].filter(Boolean).join(" · ") : "Select an exhibition to view its layout"}</p></div><span className="booth-count">{filtered.length} booths</span><div className="booth-zoom-controls"><button onClick={()=>setCanvasZoom(z=>Math.max(.5,Number((z-.1).toFixed(1))))}>−</button><span>{Math.round(canvasZoom*100)}%</span><button onClick={()=>setCanvasZoom(z=>Math.min(2,Number((z+.1).toFixed(1))))}>+</button><button onClick={()=>setCanvasZoom(1)}>Fit</button></div></div>
+        <div className="booth-panel-head booth-floorplan-head"><div><h2>Interactive floorplan</h2><p>{selectedExhibition ? [selectedExhibition.venue_name,selectedExhibition.city].filter(Boolean).join(" · ") : "Select an exhibition to view its layout"}</p></div><span className="booth-count">{filtered.length} booths</span><div className="booth-zoom-controls"><span>Drawing</span><button aria-label="Zoom floorplan out" onClick={()=>setFloorplanZoom(z=>Math.max(.5,Number((z-.1).toFixed(1))))}>−</button><span>{Math.round(floorplanZoom*100)}%</span><button aria-label="Zoom floorplan in" onClick={()=>setFloorplanZoom(z=>Math.min(3,Number((z+.1).toFixed(1))))}>+</button><button onClick={()=>setFloorplanZoom(1)}>Fit</button></div></div><div className="booth-floorplan-tools"><label>Drawing opacity <input type="range" min="0" max="1" step="0.05" value={floorplanOpacity} onChange={e=>setFloorplanOpacity(Number(e.target.value))}/><span>{Math.round(floorplanOpacity*100)}%</span></label><div><button className="booth-secondary" onClick={()=>printFloorplan(true)}><Printer size={14}/> Print / Save PDF with drawing</button><button className="booth-secondary" onClick={()=>printFloorplan(false)}><Printer size={14}/> Print / Save PDF booths only</button></div></div>
         <div className="booth-legend">{statuses.map(s => <span key={s}><i className={statusClass(s)}/>{s}</span>)}</div>
         {loading ? <div className="booth-empty"><Loader2 className="spin" size={25}/>Loading exhibition layout…</div> :
           !exhibitionId ? <div className="booth-empty"><Building2 size={30}/><b>No exhibition selected</b><span>Create an exhibition first, then add booths to its floorplan.</span></div> :
-          <div ref={canvasRef} className={"booth-canvas " + (!layoutImage ? "no-image" : "")} onPointerMove={onCanvasPointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag} style={{ ...(layoutImage && !layoutIsPdf ? { backgroundImage: "linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.18)),url('" + layoutImage + "')" } : {}), zoom: canvasZoom }}>
+          <div ref={canvasRef} className={"booth-canvas " + (!layoutImage ? "no-image" : "")} onPointerMove={onCanvasPointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag}>
             {!layoutImage && <div className="booth-canvas-grid"/>}
-            {layoutImage && layoutIsPdf && <iframe className="booth-pdf-underlay" src={layoutImage + "#toolbar=0&navpanes=0"} title="Venue floorplan PDF" />}
+            {layoutImage && <div className="booth-floorplan-layer" style={{opacity:floorplanOpacity,transform:"translate(-50%,-50%) scale("+floorplanZoom+")"}}>{layoutIsPdf ? <iframe className="booth-pdf-underlay" src={layoutImage + "#toolbar=0&navpanes=0"} title="Venue floorplan PDF"/> : <div className="booth-floorplan-image" style={{backgroundImage:"url("+JSON.stringify(layoutImage)+")"}}/>}</div>}
             {filtered.map(booth => <button key={booth.id} className={"booth-tile " + statusClass(booth.status) + (selected?.id === booth.id ? " selected" : "")} style={{ left: (booth.x_position ?? 8) + "%", top: (booth.y_position ?? 8) + "%", width: (booth.width_percent ?? 16) + "%", height: (booth.height_percent ?? 16) + "%", transform: "rotate(" + (booth.rotation_degrees || 0) + "deg)" }} onPointerDown={e => beginDrag(e, booth)} onClick={() => setSelected(booth)} title="Drag to reposition; click to inspect">
               <Grip size={12}/><b>{booth.booth_number}</b><span>{booth.width_meters || 3}m × {booth.depth_meters || 4}m</span>{selected?.id===booth.id && ["nw","n","ne","e","se","s","sw","w"].map(edge=><span key={edge} className={"booth-resize-handle "+edge} onPointerDown={e=>beginResize(e,booth,edge)} title="Drag to resize"/>) }
             </button>)}
@@ -335,7 +350,7 @@ export default function BoothManagementPage() {
           <label>Booth type<select value={form.booth_type || "Standard"} onChange={e => setForm({...form,booth_type:e.target.value})}><option>Standard</option><option>Corner</option><option>Island</option><option>Shell Scheme</option><option>Raw Space</option><option>Custom</option><option>VIP</option></select></label>
           <label>Area (sqm)<input type="number" min="0" step="0.5" value={form.area_sqm ?? ""} onChange={e => setForm({...form,area_sqm:e.target.value})}/></label>
           <label>Price<input type="number" min="0" step="0.01" value={form.price ?? ""} onChange={e => setForm({...form,price:e.target.value})}/></label>
-          <label>Currency<select value={form.currency || "AED"} onChange={e => setForm({...form,currency:e.target.value})}>{["AED","USD","SAR","KWD","BHD","QAR","OMR","EUR","GBP"].map(c=><option key={c}>{c}</option>)}</select></label>
+          <label>Currency<select value={form.currency || "USD"} onChange={e => setForm({...form,currency:e.target.value})}>{["USD","AED","SAR","KWD","BHD","QAR","OMR","EUR","GBP"].map(c=><option key={c}>{c}</option>)}</select></label>
           <label>Status<select value={form.status || "Available"} onChange={e => setForm({...form,status:e.target.value})}>{statuses.map(st=><option key={st}>{st}</option>)}</select></label>
           <label>Hall<select value={form.hall_id || hallId || ""} onChange={e => setForm({...form,hall_id:e.target.value})}><option value="">Unassigned</option>{halls.map(h=><option key={h.id} value={h.id}>{h.hall_name}</option>)}</select></label>
           <label>Zone<input value={form.zone || ""} onChange={e => setForm({...form,zone:e.target.value})} placeholder="Zone A"/></label>
@@ -348,6 +363,7 @@ export default function BoothManagementPage() {
         <div className="booth-form-actions"><button className="booth-secondary" onClick={() => setFormOpen(false)}>Cancel</button><button className="booth-primary" disabled={saving || !exhibitionId} onClick={saveBooth}>{saving?<Loader2 className="spin" size={15}/>:<Save size={15}/>} Save booth</button></div>
       </section>
     </div>}
+    <div className="booth-floating-picker">{boothPickerOpen && <div className="booth-picker-menu"><b>Select a booth</b>{filtered.length ? filtered.map(b=><button key={b.id} onClick={()=>{setSelected(b);setBoothPickerOpen(false);canvasRef.current?.scrollIntoView({behavior:"smooth",block:"center"});}}><span>{b.booth_number}</span><small>{b.status}</small></button>) : <span className="empty">No booths available</span>}</div>}<button className="booth-primary" onClick={()=>setBoothPickerOpen(v=>!v)}><MapPin size={16}/> Select a booth</button></div>
     <footer className="booth-footer"><span>VEGA Jewellery Events And Exhibitions</span><span><Check size={14}/> Booth inventory connected to Supabase</span></footer>
   </main>;
 }
