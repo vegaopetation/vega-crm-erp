@@ -204,6 +204,12 @@ export default function BoothManagementPage() {
   async function changeStatus(status: string) {
     if (!selected) return;
     setSaving(true);
+    if (status === "Available" || status === "Blocked") {
+      const { error: bookingError } = await supabase.from("booth_bookings")
+        .update({ status: "Cancelled", cancelled_at: new Date().toISOString(), hold_expires_at: null })
+        .eq("booth_id", selected.id).in("status", ["Reserved", "Booked", "Pending", "Confirmed"]);
+      if (bookingError) { setMessage(bookingError.message); setSaving(false); return; }
+    }
     const { error } = await supabase.from("booths").update({ status, updated_at: new Date().toISOString() }).eq("id", selected.id);
     if (error) setMessage(error.message);
     else { setBooths(prev => prev.map(b => b.id === selected.id ? { ...b, status } : b)); setSelected({ ...selected, status }); setMessage("Booth status updated."); }
