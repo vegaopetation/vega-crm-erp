@@ -17,3 +17,8 @@ npm run dev
 ```
 
 Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` before enabling authentication and data access.
+
+For a new database, apply `supabase/schema.sql` first, then apply the SQL files under
+`supabase/migrations/`. Existing databases that already have the base schema
+only need the migrations. Assign staff roles in `public.profiles` using the
+matching Supabase Auth user ID.
