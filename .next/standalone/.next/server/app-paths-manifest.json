@@ -1,0 +1,14 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/client-portal/register/page": "app/client-portal/register/page.js",
+  "/forgot-password/page": "app/forgot-password/page.js",
+  "/login/page": "app/login/page.js",
+  "/reset-password/page": "app/reset-password/page.js",
+  "/page": "app/page.js",
+  "/dashboard/currency/page": "app/dashboard/currency/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/kif-exhibitors/page": "app/dashboard/kif-exhibitors/page.js",
+  "/dashboard/halls/page": "app/dashboard/halls/page.js",
+  "/dashboard/booths/page": "app/dashboard/booths/page.js",
+  "/dashboard/exhibitions/page": "app/dashboard/exhibitions/page.js"
+}

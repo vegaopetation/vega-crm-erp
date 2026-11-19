@@ -1,0 +1,14 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/client-portal/register/page": "/client-portal/register",
+  "/forgot-password/page": "/forgot-password",
+  "/login/page": "/login",
+  "/reset-password/page": "/reset-password",
+  "/page": "/",
+  "/dashboard/currency/page": "/dashboard/currency",
+  "/dashboard/page": "/dashboard",
+  "/dashboard/kif-exhibitors/page": "/dashboard/kif-exhibitors",
+  "/dashboard/halls/page": "/dashboard/halls",
+  "/dashboard/booths/page": "/dashboard/booths",
+  "/dashboard/exhibitions/page": "/dashboard/exhibitions"
+}

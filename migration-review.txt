@@ -1,0 +1,41 @@
+﻿-- VEGA Booth Management completion foundation.
+-- Adds persistent floorplan geometry/detection metadata and venue hierarchy fields.
+-- Enforces one active reservation per booth to prevent concurrent double-booking.
+
+alter table public.exhibition_halls
+  add column if not exists floor_name text,
+  add column if not exists floor_level integer,
+  add column if not exists amenities jsonb not null default '[]'::jsonb,
+  add column if not exists access_points jsonb not null default '[]'::jsonb,
+  add column if not exists egress_points jsonb not null default '[]'::jsonb,
+  add column if not exists service_areas jsonb not null default '[]'::jsonb;
+
+alter table public.booths
+  add column if not exists geometry_points jsonb not null default '[]'::jsonb,
+  add column if not exists geometry_type text not null default 'rectangle',
+  add column if not exists detection_source text,
+  add column if not exists detection_confidence numeric(5,4),
+  add column if not exists detection_review_status text not null default 'manual',
+  add column if not exists is_previous_exhibitor_booth boolean not null default false,
+  add column if not exists is_selectable boolean not null default true,
+  add column if not exists previous_exhibitor_name text;
+
+alter table public.booths
+  drop constraint if exists booths_geometry_type_check,
+  add constraint booths_geometry_type_check
+    check (geometry_type in ('rectangle', 'polygon', 'circle', 'custom'));
+
+alter table public.booths
+  drop constraint if exists booths_detection_review_status_check,
+  add constraint booths_detection_review_status_check
+    check (detection_review_status in ('manual', 'detected', 'needs_review', 'approved', 'rejected'));
+
+alter table public.booths
+  drop constraint if exists booths_detection_confidence_check,
+  add constraint booths_detection_confidence_check
+    check (detection_confidence is null or (detection_confidence >= 0 and detection_confidence <= 1));
+
+-- Existing duplicate active reservations are checked before this migration is committed.
+create unique index if not exists booth_bookings_one_active_per_booth_idx
+  on public.booth_bookings (booth_id)
+  where booth_id is not null and status in ('Reserved', 'Booked', 'Pending', 'Confirmed');

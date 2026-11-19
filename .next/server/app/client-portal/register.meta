@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/client-portal/layout,_N_T_/client-portal/register/layout,_N_T_/client-portal/register/page,_N_T_/client-portal/register"
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/80bf5f46c68791e227fff7c4abd8787044e6b6585452d53aefe536f7c210e516/$/client-portal/register",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/client-portal/register/page"
+    },
+    "isFallback": false
+  }
+}
