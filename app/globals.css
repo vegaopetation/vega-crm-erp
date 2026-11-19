@@ -59,3 +59,25 @@
     letter-spacing: 0;
   }
 }
+
+.permission-workspace { padding-bottom: 36px; }
+.permission-workspace label { display: grid; gap: 5px; }
+.permission-workspace input, .permission-workspace select, .permission-workspace textarea {
+  width: 100%;
+  max-width: 480px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+.permission-workspace details { padding: 12px 0; }
+.permission-workspace summary { cursor: pointer; }
+.permission-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.permission-tabs button, .permission-record button { padding: 8px 12px; cursor: pointer; }
+.permission-tabs button[aria-pressed="true"] { background: var(--red); color: #fff; border-color: var(--red); }
+.permission-record { padding: 12px; margin: 10px 0; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+.permission-record form { display: grid; gap: 10px; justify-items: start; }
+.permission-record form label { width: 100%; }
+.permission-record button + button { margin-left: 8px; }
+.permission-record dd { overflow-wrap: anywhere; }
