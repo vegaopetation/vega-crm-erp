@@ -1,0 +1,8 @@
+create type public.project_role as enum ('admin','project_director','sales','operations','viewer');
+create type public.booth_status as enum ('available','reserved','sold','blocked');
+create table public.profiles(id uuid primary key references auth.users(id) on delete cascade,full_name text not null,role public.project_role not null default 'viewer');
+create table public.projects(id uuid primary key default gen_random_uuid(),code text unique not null,name text not null,status text not null default 'planning',default_currency char(3) not null default 'USD',created_by uuid references public.profiles(id));
+create table public.project_members(project_id uuid references public.projects(id) on delete cascade,user_id uuid references public.profiles(id) on delete cascade,role public.project_role not null,primary key(project_id,user_id));
+create table public.halls(id uuid primary key default gen_random_uuid(),project_id uuid references public.projects(id) on delete cascade,name text not null);
+create table public.booths(id uuid primary key default gen_random_uuid(),hall_id uuid references public.halls(id) on delete cascade,code text not null,status public.booth_status not null default 'available',exhibitor_name text);
+alter table public.profiles enable row level security;alter table public.projects enable row level security;alter table public.project_members enable row level security;alter table public.halls enable row level security;alter table public.booths enable row level security;
