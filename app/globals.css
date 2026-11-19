@@ -81,3 +81,49 @@
 .permission-record form label { width: 100%; }
 .permission-record button + button { margin-left: 8px; }
 .permission-record dd { overflow-wrap: anywhere; }
+
+.hall-floorplan { margin: 16px 0; }
+.floorplan-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+.floorplan-scroll { max-height: 72vh; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.floorplan-canvas {
+  position: relative;
+  min-width: 350px;
+  isolation: isolate;
+  background: #fff repeating-linear-gradient(0deg, #e9e8e5 0 1px, transparent 1px 100%);
+  background-size: 20px 20px;
+}
+.floorplan-canvas[style*="background-image"] { background-size: 100% 100%; background-repeat: no-repeat; }
+.floorplan-tile { position: absolute; min-width: 10px; min-height: 10px; }
+.floorplan-tile:focus-within, .floorplan-tile:has([aria-pressed="true"]) { z-index: 1; }
+.floorplan-booth {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid currentColor;
+  padding: 0 2px;
+  color: inherit;
+  background: inherit;
+  font-size: clamp(7px, 1vw, 12px);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.floorplan-booth[data-editable="true"] { touch-action: none; cursor: grab; }
+.floorplan-booth[aria-pressed="true"] { outline: 2px solid #211316; outline-offset: 1px; }
+.floorplan-available { color: #174f34; background: #d5eee0ed; }
+.floorplan-reserved { color: #654200; background: #f7e5b9ed; }
+.floorplan-sold { color: #841820; background: #f7cdd1ed; }
+.floorplan-blocked { color: #363840; background: #e4e4e9ed; }
+.floorplan-resize {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  background: var(--red);
+  border-radius: 3px;
+  cursor: nwse-resize;
+  touch-action: none;
+}

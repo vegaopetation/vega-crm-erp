@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { HallFloorplan } from "./hall-floorplan";
 import { supabase } from "../lib/supabase";
 
 type Role = "admin" | "project_director" | "sales" | "operations" | "viewer";
@@ -171,6 +172,8 @@ function BoothInventory({projectId, role}: {projectId: string; role: Role | null
   const [hallId, setHallId] = useState("");
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
+  const [layoutVersion, setLayoutVersion] = useState(0);
+  const [view, setView] = useState<"plan" | "list">("plan");
   const isAdmin = role === "admin";
   const canEditLayout = isAdmin || role === "project_director" || role === "operations";
   useEffect(() => {
@@ -193,6 +196,12 @@ function BoothInventory({projectId, role}: {projectId: string; role: Role | null
     </select></label> : <p>No halls.</p>}
     {hall && <>
       <RecordEditor key={hallId} resource={halls} row={hall} editable={canEditLayout} removable={isAdmin} onSaved={refreshHalls} />
+      <div className="permission-tabs" aria-label="Booth inventory views">
+        <button type="button" aria-pressed={view === "plan"} onClick={() => setView("plan")}>Floor plan</button>
+        <button type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>Booth records</button>
+      </div>
+      {view === "plan" ? <HallFloorplan key={hallId} hallId={hallId} projectId={projectId} canEdit={canEditLayout}
+        version={layoutVersion} onChange={() => setLayoutVersion(value => value + 1)} /> : (
       <ResourceList key={hallId} resource={booths} scopeId={hallId} isAdmin={isAdmin}
         canEdit={canEditLayout || role === "sales"} canCreate={isAdmin} fields={row => {
           if (role === "sales") return row.status === "available"
@@ -204,6 +213,7 @@ function BoothInventory({projectId, role}: {projectId: string; role: Role | null
           }
           return booths.fields;
         }} />
+      )}
     </>}
     {isAdmin && <details><summary>Add hall</summary>
       <RecordEditor key={version} resource={halls} scopeId={projectId} onSaved={refreshHalls} />
