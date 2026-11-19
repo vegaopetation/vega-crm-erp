@@ -100,6 +100,13 @@ export default function Home() {
 function Dashboard({ user, profile }: { user: User; profile: Profile | null }) {
   const [signingOut, setSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
+  const [activeSection, setActiveSection] = useState("Overview");
+  const [canViewFinancials, setCanViewFinancials] = useState(profile?.role === "admin");
+  const menuItems = ["Overview", "Exhibition Projects", "Exhibitors", "Booth Inventory", "Finance", "Reports", "Staff & Permissions"];
+  const visibleMenu = menuItems.filter(item =>
+    (item !== "Staff & Permissions" || profile?.role === "admin") &&
+    (!["Finance", "Reports"].includes(item) || canViewFinancials)
+  );
   const name = profile?.full_name?.trim() || user.email || user.phone || "VEGA user";
   const initials = profile?.full_name?.trim()
     ? name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase()
@@ -124,13 +131,21 @@ function Dashboard({ user, profile }: { user: User; profile: Profile | null }) {
       <aside>
         <div className="brand"><b>V</b><span><strong>VEGA</strong><small>INTERTRADE &amp; EXHIBITIONS</small></span></div>
         <p className="work"><i/> VEGA CRM 2.0</p>
+        <nav className="vega-sidebar-nav" aria-label="Main navigation">
+          {visibleMenu.map(item => <button key={item} type="button"
+            className={activeSection === item ? "on" : ""}
+            aria-current={activeSection === item ? "page" : undefined}
+            onClick={() => setActiveSection(item)} title={item}>
+            <span>{item}</span>
+          </button>)}
+        </nav>
         <div className="user"><i aria-hidden="true">{initials}</i><span><b>{name}</b><small>{role}</small></span></div>
         <button type="button" className="logout" onClick={logout} disabled={signingOut}>
           {signingOut ? "Signing out…" : "Logout"}
         </button>
         {logoutError && <p className="logout-error" role="alert">{logoutError}</p>}
       </aside>
-      {profile ? <ProjectWorkspace userId={user.id} isAdmin={profile.role === "admin"} /> : (
+      {profile ? <ProjectWorkspace userId={user.id} isAdmin={profile.role === "admin"} activeSection={activeSection} onFinancialAccessChange={setCanViewFinancials} /> : (
         <section className="content">
           <h1>Access pending</h1>
           <p>Your CRM workspace will be available after a staff profile is assigned.</p>

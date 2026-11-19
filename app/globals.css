@@ -81,3 +81,35 @@
 .permission-record form label { width: 100%; }
 .permission-record button + button { margin-left: 8px; }
 .permission-record dd { overflow-wrap: anywhere; }
+
+/* VEGA CRM 2.0 — accessible sidebar navigation */
+.vega-sidebar-nav{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;overflow-y:auto;margin:8px 0 18px}
+.vega-sidebar-nav button{min-height:43px;flex-shrink:0;transition:background .2s ease}
+.vega-sidebar-nav button.on{background:linear-gradient(100deg,#be111b,#ec3439);color:#fff;font-weight:800}
+.vega-sidebar-nav button:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+.vega-overview{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px}
+@media(max-width:900px){
+ .shell>aside{width:185px;padding:18px 9px}
+ .shell>aside .brand span{display:block}
+ .shell>aside .brand strong{font-size:17px;letter-spacing:1px}
+ .shell>aside .brand small{font-size:6px}
+ .shell>aside .brand>b{font-size:35px}
+ .shell>aside .work{display:block;font-size:9px}
+ .vega-sidebar-nav button span{display:inline;font-size:11px}
+ .shell>aside .user{flex-direction:row;text-align:left}
+ .shell>aside .user span{display:block}
+ .shell>aside .user b{display:block}
+ .content{margin-left:185px;width:calc(100% - 185px);padding:0 14px 30px}
+}
+@media(max-width:520px){
+ .shell>aside{width:146px;padding:14px 6px}
+ .shell>aside .brand{gap:5px;margin:0 2px 16px}
+ .shell>aside .brand>b{font-size:26px}
+ .shell>aside .brand strong{font-size:14px}
+ .shell>aside .brand small{font-size:5px}
+ .vega-sidebar-nav button{padding:10px 7px}
+ .vega-sidebar-nav button span{font-size:10px}
+ .shell>aside .user b{font-size:9px}
+ .content{margin-left:146px;width:calc(100% - 146px);padding:0 10px 24px}
+ .permission-workspace header{height:65px}
+}

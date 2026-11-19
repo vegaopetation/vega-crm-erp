@@ -211,10 +211,12 @@ function BoothInventory({projectId, role}: {projectId: string; role: Role | null
   </>;
 }
 
-export function ProjectWorkspace({userId, isAdmin}: {userId: string; isAdmin: boolean}) {
+export function ProjectWorkspace({userId, isAdmin, activeSection, onFinancialAccessChange}: {
+  userId: string; isAdmin: boolean; activeSection: string;
+  onFinancialAccessChange: (allowed: boolean) => void;
+}) {
   const [data, setData] = useState<{ projects: Row[]; roles: Record<string, Role> } | null>(null);
   const [projectId, setProjectId] = useState("");
-  const [view, setView] = useState("Project");
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion(value => value + 1), []);
@@ -242,10 +244,17 @@ export function ProjectWorkspace({userId, isAdmin}: {userId: string; isAdmin: bo
   const director = role === "project_director";
   const sales = role === "sales";
   const canViewFinancials = isAdmin || director;
-  const tabs = ["Project", "Exhibitors", "Booth inventory"];
-  if (canViewFinancials) tabs.push("Finance", "Reports");
-  if (isAdmin) tabs.push("Assignments");
-  const activeView = tabs.includes(view) ? view : "Project";
+  useEffect(() => {
+    onFinancialAccessChange(canViewFinancials);
+  }, [canViewFinancials, onFinancialAccessChange]);
+  const viewMap: Record<string, string> = {
+    "Overview": "Overview", "Exhibition Projects": "Project",
+    "Exhibitors": "Exhibitors", "Booth Inventory": "Booth inventory",
+    "Finance": "Finance", "Reports": "Reports", "Staff & Permissions": "Assignments"
+  };
+  const requestedView = viewMap[activeSection] ?? "Overview";
+  const activeView = ((requestedView === "Finance" || requestedView === "Reports") && !canViewFinancials)
+    || (requestedView === "Assignments" && !isAdmin) ? "Overview" : requestedView;
 
   return <section className="content permission-workspace">
     <header><b>Exhibition projects</b></header>
@@ -253,15 +262,17 @@ export function ProjectWorkspace({userId, isAdmin}: {userId: string; isAdmin: bo
     {!error && !data && <p role="status">Loading projects…</p>}
     {data?.projects.length === 0 && <p>No projects are assigned to your account.</p>}
     {data && data.projects.length > 0 && <label>Project<select value={projectId}
-      onChange={event => { setProjectId(event.target.value); setView("Project"); }}>
+      onChange={event => { setProjectId(event.target.value); }}>
       {data.projects.map(row => <option key={String(row.id)} value={String(row.id)}>{row.name}</option>)}
     </select></label>}
     {project && <>
-      <div aria-label="Project workspaces" className="permission-tabs">
-        {tabs.map(tab => <button type="button" key={tab} aria-pressed={tab === activeView} onClick={() => setView(tab)}>{tab}</button>)}
-      </div>
       <section key={`${projectId}:${activeView}`}>
-        <h1>{activeView}</h1>
+        <h1>{activeSection === "Exhibition Projects" ? "Exhibition Projects" : activeSection}</h1>
+        {activeView === "Overview" && <div className="vega-overview">
+          <h2>Welcome to VEGA CRM 2.0</h2>
+          <p>Manage your exhibition projects, exhibitors, booth inventory and operations.</p>
+          <p>Selected exhibition: <strong>{String(project.name)}</strong></p>
+        </div>}
         {activeView === "Project" && <RecordEditor resource={projects} row={project} editable={isAdmin || director}
           removable={isAdmin} onSaved={refresh} />}
         {activeView === "Exhibitors" && <ResourceList resource={exhibitors} scopeId={projectId} isAdmin={isAdmin}
@@ -271,16 +282,19 @@ export function ProjectWorkspace({userId, isAdmin}: {userId: string; isAdmin: bo
           canEdit={canViewFinancials} canCreate={isAdmin} />}
         {activeView === "Reports" && <ResourceList resource={reports} scopeId={projectId} isAdmin={isAdmin}
           canEdit={isAdmin} canCreate={isAdmin} exportReport />}
-        {activeView === "Assignments" && <ResourceList resource={assignments} scopeId={projectId} isAdmin
-          canEdit canCreate createFields={[field("user_id", "Staff user ID")]}
-          rowIdentity={row => ({project_id: projectId, user_id: String(row.user_id)})}
-          rowLabel={row => String(row.user_id)} />}
+        {activeView === "Assignments" && isAdmin && <>
+          <h2>Project assignments</h2>
+          <ResourceList resource={assignments} scopeId={projectId} isAdmin
+            canEdit canCreate createFields={[field("user_id", "Staff user ID")]}
+            rowIdentity={row => ({project_id: projectId, user_id: String(row.user_id)})}
+            rowLabel={row => String(row.user_id)} />
+          <h2>Staff profiles</h2>
+          <ResourceList resource={staff} isAdmin canEdit canCreate
+            createFields={[field("id", "Supabase Auth user ID")]} rowLabel={row => String(row.id)} />
+        </>}
       </section>
     </>}
-    {isAdmin && data && <>
-      <details><summary>Add project</summary><RecordEditor key={version} resource={projects} onSaved={refresh} /></details>
-      <details><summary>Staff profiles</summary><ResourceList resource={staff} isAdmin canEdit canCreate
-        createFields={[field("id", "Supabase Auth user ID")]} rowLabel={row => String(row.id)} /></details>
-    </>}
+    {isAdmin && data && activeView === "Project" &&
+      <details><summary>Add project</summary><RecordEditor key={version} resource={projects} onSaved={refresh} /></details>}
   </section>;
 }
