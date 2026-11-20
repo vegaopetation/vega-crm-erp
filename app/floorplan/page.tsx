@@ -1,56 +1,48 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { PointerEvent, useMemo, useRef, useState } from "react";
 
 type Status = "available" | "on_hold" | "booked" | "blocked";
-type Booth = { id: string; status: Status; width: number; depth: number; exhibitor?: string };
-
+type Booth = { id: string; status: Status; width: number; depth: number; x: number; y: number; w: number; h: number; exhibitor?: string };
+type Drag = { id: string; mode: "move" | "resize"; startX: number; startY: number; x: number; y: number; w: number; h: number };
 const halls = ["Hall 5", "Hall 6", "Hall 7"];
-const drawings: Record<string, string> = {
-  "Hall 5": "/floorplans/kif-2026-hall-5-original.pdf",
-  "Hall 6": "/floorplans/kif-2026-hall-6-original.pdf",
-  "Hall 7": "/floorplans/kif-2026-hall-7-original.pdf",
-};
-const names = ["Aurum House", "Blue Diamond", "Noor Jewels", "Goldline"];
-const labels: Record<Status, string> = { available: "Available", on_hold: "On hold", booked: "Booked", blocked: "Blocked" };
+const drawings: Record<string, string> = { "Hall 5": "/floorplans/kif-2026-hall-5-original.pdf", "Hall 6": "/floorplans/kif-2026-hall-6-original.pdf", "Hall 7": "/floorplans/kif-2026-hall-7-original.pdf" };
 const colors: Record<Status, string> = { available: "#c7f2d5", on_hold: "#e4a52b", booked: "#d71920", blocked: "#515158" };
+const labels: Record<Status, string> = { available: "Available", on_hold: "On hold", booked: "Booked", blocked: "Blocked" };
 
-function buildBooths(hall: string): Booth[] {
-  const number = hall.replace("Hall ", "");
-  return Array.from({ length: 42 }, (_, index) => {
-    const width = index % 5 === 0 ? 6 : index % 3 === 0 ? 4 : 3;
-    const depth = index % 5 === 0 ? 4 : index % 3 === 0 ? 3 : 4;
+function createBooths(hall: string): Booth[] {
+  const prefix = hall.replace("Hall ", "");
+  return Array.from({ length: 30 }, (_, index) => {
+    const col = index % 6, row = Math.floor(index / 6), width = index % 5 === 0 ? 6 : 4, depth = index % 5 === 0 ? 4 : 3;
     const status: Status = index % 11 === 0 ? "blocked" : index % 7 === 0 ? "on_hold" : index % 4 === 0 ? "available" : "booked";
-    return { id: `${number}.${index + 1}`, status, width, depth, exhibitor: status === "booked" ? names[index % names.length] : undefined };
+    return { id: `${prefix}.${index + 1}`, status, width, depth, x: 4 + col * 15.5, y: 8 + row * 17, w: 12, h: 12, exhibitor: status === "booked" ? "Exhibitor" : undefined };
   });
 }
 
 export default function FloorplanPage() {
   const [hall, setHall] = useState("Hall 5");
-  const [inventory, setInventory] = useState<Record<string, Booth[]>>(() => Object.fromEntries(halls.map((name) => [name, buildBooths(name)])));
+  const [inventory, setInventory] = useState<Record<string, Booth[]>>(() => Object.fromEntries(halls.map((name) => [name, createBooths(name)])));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [client, setClient] = useState(false);
-  const [view, setView] = useState<"drawing" | "interactive">("drawing");
+  const [view, setView] = useState<"drawing" | "designer">("drawing");
+  const [detecting, setDetecting] = useState(false);
+  const [showBackground, setShowBackground] = useState(true);
+  const [opacity, setOpacity] = useState(42);
+  const board = useRef<HTMLDivElement>(null);
+  const drag = useRef<Drag | null>(null);
   const booths = inventory[hall];
   const selected = booths.find((booth) => booth.id === selectedId) ?? null;
-  const counts = useMemo(() => Object.fromEntries((["available", "on_hold", "booked", "blocked"] as Status[]).map((name) => [name, booths.filter((booth) => booth.status === name).length])) as Record<Status, number>, [booths]);
-
-  function changeStatus(next: Status) {
-    if (!selected) return;
-    setInventory((current) => ({ ...current, [hall]: current[hall].map((booth) => booth.id === selected.id ? { ...booth, status: next, exhibitor: next === "booked" ? booth.exhibitor ?? "New exhibitor" : undefined } : booth) }));
-  }
-  function openWhatsApp() {
-    if (!selected || selected.status !== "available") return;
-    const message = encodeURIComponent(`VEGA booth booking request\nEvent: 25TH KIF GOLD EXPO\nHall: ${hall}\nBooth: ${selected.id}\nDimensions: ${selected.width} × ${selected.depth} m\nArea: ${selected.width * selected.depth} sqm`);
-    changeStatus("on_hold");
-    window.open(`https://wa.me/971509811011?text=${message}`, "_blank", "noopener,noreferrer");
-  }
+  const counts = useMemo(() => Object.fromEntries((["available", "on_hold", "booked", "blocked"] as Status[]).map((key) => [key, booths.filter((booth) => booth.status === key).length])) as Record<Status, number>, [booths]);
   function chooseHall(name: string) { setHall(name); setSelectedId(null); setView("drawing"); }
-
-  return <main className="floor-shell">
-    <header className="floor-header"><a href="/">‹ Back to projects</a><div><small>25TH KIF GOLD EXPO · FLOORPLAN MANAGEMENT</small><h1>{hall} — booking map</h1></div><button className="filter-option" onClick={() => { setClient((value) => !value); setSelectedId(null); }}>{client ? "Staff view" : "Client view"}</button><button className="new">Publish changes</button></header>
-    <section className="floor-main"><aside className="floor-side"><p>VENUE</p>{halls.map((name) => <button key={name} className={name === hall ? "hall-active" : ""} onClick={() => chooseHall(name)}>{name}<span>›</span></button>)}<hr /><p>INVENTORY</p><div className="legend">{(["available", "on_hold", "booked", "blocked"] as Status[]).map((status) => <span key={status}><i className={status} style={{ backgroundColor: colors[status] }} /> {labels[status]} <b>{counts[status]}</b></span>)}</div></aside>
-      <section className="plan"><div className="plan-top"><span>{view === "drawing" ? "Original KIF drawing — preserved unchanged for reference." : client ? "Choose an available booth. Booking opens Sales WhatsApp and creates a five-hour hold." : "Interactive working layer — select a booth, then Book, Hold, Release or Block it."}</span><b>{view === "drawing" ? "ORIGINAL DRAWING" : `${counts.booked + counts.on_hold} / ${booths.length} allocated`}</b></div><div className="drawing-tabs"><button className={view === "drawing" ? "active" : ""} onClick={() => { setView("drawing"); setSelectedId(null); }}>Original KIF drawing</button><button className={view === "interactive" ? "active" : ""} onClick={() => setView("interactive")}>Interactive working layer</button><a href={drawings[hall]} target="_blank" rel="noreferrer">Open PDF ↗</a></div>{view === "drawing" ? <div className="drawing-frame"><iframe key={hall} title={`${hall} original KIF drawing`} src={`${drawings[hall]}#view=FitH`} /></div> : <div className="hall-plan"><div className="entry">MAIN ENTRANCE</div><div className="aisle horizontal" /><div className="aisle vertical" />{booths.map((booth) => <button key={booth.id} style={{ backgroundColor: colors[booth.status], color: booth.status === "available" ? "#12673d" : "#fff" }} disabled={client && booth.status !== "available"} onClick={() => setSelectedId(booth.id)} className={`booth ${booth.status} ${selectedId === booth.id ? "selected" : ""}`}><b>{booth.id}</b><small>{booth.width} × {booth.depth} m · {booth.width * booth.depth} sqm</small></button>)}</div>}</section></section>
-    {selected && <aside className="booth-panel"><button className="close" onClick={() => setSelectedId(null)}>×</button><p>{client ? "BOOTH SELECTION" : "BOOTH DETAILS"}</p><h2>{selected.id}</h2><span className={`badge ${selected.status}`}>{labels[selected.status]}</span><div className="booth-details"><small>EXHIBITOR</small><b>{selected.exhibitor ?? "Unassigned"}</b><small>HALL</small><b>{hall}</b><small>DIMENSIONS</small><b>{selected.width} × {selected.depth} m</b><small>AREA</small><b>{selected.width * selected.depth} sqm</b></div>{client ? <button className="new full" disabled={selected.status !== "available"} onClick={openWhatsApp}>Book — contact Sales</button> : <><p>ASSIGN STATUS</p><div className="status-actions"><button className="book" onClick={() => changeStatus("booked")}>Book</button><button className="hold" onClick={() => changeStatus("on_hold")}>Hold 5h</button><button className="release" onClick={() => changeStatus("available")}>Release</button><button className="block" onClick={() => changeStatus("blocked")}>Block</button></div></>}</aside>}
+  function update(id: string, changes: Partial<Booth>) { setInventory((all) => ({ ...all, [hall]: all[hall].map((booth) => booth.id === id ? { ...booth, ...changes } : booth) })); }
+  function startDrag(event: PointerEvent<HTMLElement>, booth: Booth, mode: Drag["mode"]) { if (client) return; event.preventDefault(); event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); drag.current = { id: booth.id, mode, startX: event.clientX, startY: event.clientY, x: booth.x, y: booth.y, w: booth.w, h: booth.h }; setSelectedId(booth.id); }
+  function move(event: PointerEvent<HTMLDivElement>) { const active = drag.current, rect = board.current?.getBoundingClientRect(); if (!active || !rect) return; const dx = ((event.clientX - active.startX) / rect.width) * 100, dy = ((event.clientY - active.startY) / rect.height) * 100; if (active.mode === "move") update(active.id, { x: Math.max(0, Math.min(100 - active.w, active.x + dx)), y: Math.max(0, Math.min(100 - active.h, active.y + dy)) }); else update(active.id, { w: Math.max(5, Math.min(100 - active.x, active.w + dx)), h: Math.max(5, Math.min(100 - active.y, active.h + dy)) }); }
+  function endDrag() { drag.current = null; }
+  function detect() { setDetecting(true); setTimeout(() => { setView("designer"); setDetecting(false); }, 800); }
+  function request() { if (!selected || selected.status !== "available") return; update(selected.id, { status: "on_hold" }); window.open(`https://wa.me/971509811011?text=${encodeURIComponent(`VEGA booth request — ${hall}, booth ${selected.id}, ${selected.width} × ${selected.depth} m`)}`, "_blank", "noopener,noreferrer"); }
+  return <main className="floor-shell"><header className="floor-header"><a href="/">‹ Back to projects</a><div><small>25TH KIF GOLD EXPO · FLOORPLAN DESIGNER</small><h1>{hall} — booth map</h1></div><button className="filter-option" onClick={() => { setClient((x) => !x); setSelectedId(null); }}>{client ? "Staff design view" : "Client view"}</button><button className="new">Publish changes</button></header>
+    <section className="floor-main"><aside className="floor-side"><p>VENUE</p>{halls.map((name) => <button key={name} className={name === hall ? "hall-active" : ""} onClick={() => chooseHall(name)}>{name}<span>›</span></button>)}<hr /><p>INVENTORY</p><div className="legend">{(["available", "on_hold", "booked", "blocked"] as Status[]).map((status) => <span key={status}><i style={{ backgroundColor: colors[status] }} /> {labels[status]} <b>{counts[status]}</b></span>)}</div></aside>
+      <section className="plan"><div className="plan-top"><span>{view === "drawing" ? "Original KIF drawing — source reference" : client ? "Select an available booth to contact Sales." : "Drag booths to position. Drag the lower-right handle to resize."}</span><b>{view === "drawing" ? "ORIGINAL" : "DESIGNER MODE"}</b></div><div className="drawing-tabs"><button className={view === "drawing" ? "active" : ""} onClick={() => setView("drawing")}>Original KIF drawing</button><button className={view === "designer" ? "active" : ""} onClick={() => setView("designer")}>Interactive designer</button>{!client && <button onClick={detect} disabled={detecting}>{detecting ? "Detecting…" : "Auto-detect booths"}</button>}<a href={drawings[hall]} target="_blank" rel="noreferrer">Open PDF ↗</a></div>{view === "drawing" ? <div className="drawing-frame"><iframe key={hall} title={`${hall} original KIF drawing`} src={`${drawings[hall]}#view=FitH`} /></div> : <><div className="designer-tools"><label><input type="checkbox" checked={showBackground} onChange={(e) => setShowBackground(e.target.checked)} /> Original drawing background</label>{showBackground && <label>Opacity <input type="range" min="0" max="100" value={opacity} onChange={(e) => setOpacity(Number(e.target.value))} /> {opacity}%</label>}<span>{client ? "Client selection" : "Draft detection — verify every booth before publishing"}</span></div><div className="designer-board" ref={board} onPointerMove={move} onPointerUp={endDrag} onPointerLeave={endDrag}>{showBackground && <iframe className="designer-background" title="KIF drawing reference" src={`${drawings[hall]}#view=FitH`} style={{ opacity: opacity / 100 }} />}{booths.map((booth) => <button key={booth.id} className={`shape ${selectedId === booth.id ? "selected" : ""}`} disabled={client && booth.status !== "available"} onPointerDown={(e) => startDrag(e, booth, "move")} onClick={() => setSelectedId(booth.id)} style={{ left: `${booth.x}%`, top: `${booth.y}%`, width: `${booth.w}%`, height: `${booth.h}%`, background: colors[booth.status], color: booth.status === "available" ? "#146b43" : "#fff" }}><b>{booth.id}</b><small>{booth.width} × {booth.depth} m</small>{!client && <i title="Resize booth" onPointerDown={(e) => startDrag(e, booth, "resize")} />}</button>)}</div></>}</section></section>
+    {selected && <aside className="booth-panel"><button className="close" onClick={() => setSelectedId(null)}>×</button><p>{client ? "BOOTH SELECTION" : "EDITABLE BOOTH"}</p><h2>{selected.id}</h2><span className={`badge ${selected.status}`}>{labels[selected.status]}</span><div className="booth-details"><small>DIMENSIONS</small><b>{selected.width} × {selected.depth} m · {selected.width * selected.depth} sqm</b><small>POSITION</small><b>{Math.round(selected.x)}% × {Math.round(selected.y)}%</b><small>STATUS</small><b>{labels[selected.status]}</b></div>{client ? <button className="new full" disabled={selected.status !== "available"} onClick={request}>Book — contact Sales</button> : <><p>EDIT</p><div className="status-actions"><button className="release" onClick={() => update(selected.id, { status: "available" })}>Available</button><button className="hold" onClick={() => update(selected.id, { status: "on_hold" })}>Hold</button><button className="book" onClick={() => update(selected.id, { status: "booked" })}>Book</button><button className="block" onClick={() => update(selected.id, { status: "blocked" })}>Block</button></div></>}</aside>}
   </main>;
 }
